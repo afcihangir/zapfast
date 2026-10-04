@@ -1108,6 +1108,7 @@ pub struct Gif {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Dialog {
     Shortcuts,
+    Downloads,
     About,
     ConfirmUnlink,
     ConfirmRemoveAccount(AccountId),
@@ -1375,6 +1376,7 @@ pub enum Action {
         name: String,
     },
     CancelDownload {
+        account: AccountId,
         card: Option<usize>,
         chat: ChatId,
         message: String,
