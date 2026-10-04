@@ -333,6 +333,14 @@ pub struct UnreadDivider {
     pub placed: bool,
 }
 
+#[derive(Clone, Debug)]
+pub struct DownloadActivity {
+    pub name: String,
+    pub received: u64,
+    pub total: Option<u64>,
+    pub started: Instant,
+}
+
 pub struct App {
     pub dirs: AppDirs,
     pub settings: Settings,
@@ -471,6 +479,13 @@ pub struct App {
     /// Next voice message of a run, playing once its download finishes, and
     /// when the download began. Media stays paused for a short while meanwhile.
     voice_wanted: Option<(ChatId, String, Instant)>,
+    /// User-requested saves waiting for their cached media download to finish.
+    pending_download_saves: HashMap<(ChatId, String, Option<usize>), String>,
+    /// User-visible downloads currently queued or transferring.
+    pub user_downloads: HashMap<(ChatId, String, Option<usize>), DownloadActivity>,
+    /// Briefly opens the Downloads menu when a user download starts.
+    pub downloads_popup_until: Option<Instant>,
+    pub downloads_popup_opened: bool,
     /// Active voice recorder.
     pub recording: Option<Recorder>,
     /// A voice message the worker refused, kept with its chat so it can be
@@ -861,7 +876,10 @@ impl App {
         if options.tray {
             let waker = waker.clone();
             app.tray =
-                fastframe_tray::Tray::spawn(tray_config(app.tray_lockable), move || waker.wake());
+                fastframe_tray::Tray::spawn(
+                    tray_config(app.tray_lockable, app.locale),
+                    move || waker.wake(),
+                );
         }
         // The clock preference may run a helper on Linux; keep it off the
         // first frame.
@@ -1042,6 +1060,10 @@ impl App {
             video_wanted: None,
             voice_chat: None,
             voice_wanted: None,
+            pending_download_saves: HashMap::new(),
+            user_downloads: HashMap::new(),
+            downloads_popup_until: None,
+            downloads_popup_opened: false,
             recording: None,
             media_hold: None,
             pauses_media: false,
@@ -5330,6 +5352,20 @@ impl App {
             Action::SetInterfaceLanguage(choice) => {
                 self.settings.interface_language = choice;
                 self.locale = crate::i18n::resolve(choice);
+                if let Some(tray) = &mut self.tray {
+                    tray.set_label(
+                        TRAY_SHOW,
+                        crate::i18n::gettext(self.locale, "Show or hide ZapFast").into_owned(),
+                    );
+                    tray.set_label(
+                        TRAY_LOCK,
+                        crate::i18n::gettext(self.locale, "Lock ZapFast").into_owned(),
+                    );
+                    tray.set_label(
+                        TRAY_QUIT,
+                        crate::i18n::gettext(self.locale, "Quit").into_owned(),
+                    );
+                }
                 self.mark_settings_dirty();
             }
             Action::SetCustomTheme(filename) => {
@@ -6370,6 +6406,16 @@ impl App {
         {
             self.store_draft(chat, &self.composer);
         }
+    }
+
+    /// User-visible download destination: chosen folder, then the operating
+    /// system Downloads folder, with private cache only as a last resort.
+    pub fn downloads_dir(&self) -> PathBuf {
+        self.settings.download_folder.clone().unwrap_or_else(|| {
+            directories::UserDirs::new()
+                .and_then(|dirs| dirs.download_dir().map(std::path::Path::to_path_buf))
+                .unwrap_or_else(|| self.dirs.media_cache_dir())
+        })
     }
 
     /// Returns attachment state for a loaded message.
