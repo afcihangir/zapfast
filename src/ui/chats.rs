@@ -122,7 +122,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             18.0,
                             palette.secondary,
                             palette.text,
-                            "Back to chats",
+                            &crate::i18n::gettext(app.locale, "Back to chats"),
                         )
                         .tab_stop(Stop::Back)
                         .clicked()
@@ -135,9 +135,9 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                         theme::text(
                             ui,
                             if app.locked_folder {
-                                "Locked chats"
+                                crate::i18n::gettext(app.locale, "Locked chats")
                             } else {
-                                "Archived"
+                                crate::i18n::gettext(app.locale, "Archived")
                             },
                             theme::bold(20.0),
                             palette.text,
@@ -155,6 +155,11 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                         );
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        let settings_label = if app.page == Page::Settings {
+                            crate::i18n::gettext(app.locale, "Close settings (Ctrl+,)")
+                        } else {
+                            crate::i18n::gettext(app.locale, "Settings (Ctrl+,)")
+                        };
                         if theme::icon_button(
                             ui,
                             Icon::Settings,
@@ -167,11 +172,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             palette.text,
                             // Same as the avatar: the label says what the click
                             // does now, not what it opened.
-                            if app.page == Page::Settings {
-                                "Close settings (Ctrl+,)"
-                            } else {
-                                "Settings (Ctrl+,)"
-                            },
+                            settings_label.as_ref(),
                         )
                         .tab_stop(Stop::Settings)
                         .clicked()
@@ -184,7 +185,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             18.0,
                             palette.secondary,
                             palette.text,
-                            "New chat",
+                            &crate::i18n::gettext(app.locale, "New chat"),
                         )
                         .tab_stop(Stop::NewChat)
                         .clicked()
@@ -198,13 +199,14 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             18.0,
                             palette.secondary,
                             palette.text,
-                            "Hide the chat list (Ctrl+B)",
+                            &crate::i18n::gettext(app.locale, "Hide the chat list (Ctrl+B)"),
                         )
                         .tab_stop(Stop::Sidebar)
                         .clicked()
                         {
                             app.actions.push(Action::ToggleSidebar);
                         }
+                        downloads_button(app, ui, &palette);
                     });
                 },
             );
@@ -298,7 +300,7 @@ fn macos_header(app: &mut App, ui: &mut egui::Ui) {
                         18.0,
                         palette.secondary,
                         palette.text,
-                        "New chat (⌘N)",
+                        &crate::i18n::gettext(app.locale, "New chat (⌘N)"),
                     )
                     .tab_stop(Stop::NewChat)
                     .clicked()
@@ -311,13 +313,14 @@ fn macos_header(app: &mut App, ui: &mut egui::Ui) {
                         18.0,
                         palette.secondary,
                         palette.text,
-                        "Hide the chat list (⌘B)",
+                        &crate::i18n::gettext(app.locale, "Hide the chat list (⌘B)"),
                     )
                     .tab_stop(Stop::Sidebar)
                     .clicked()
                     {
                         app.actions.push(Action::ToggleSidebar);
                     }
+                    downloads_button(app, ui, &palette);
                 });
             });
             ui.ctx()
@@ -456,7 +459,7 @@ fn filter_chips(app: &mut App, ui: &mut egui::Ui) {
                         selected,
                     )
                     .tab_stop(Stop::Locked)
-                    .on_hover_text("Open locked chats with your local code");
+                    .on_hover_text(crate::i18n::gettext(app.locale, "Open locked chats with your local code"));
                     ui.ctx()
                         .data_mut(|data| data.insert_temp(egui::Id::new("locked-chip"), chip.rect));
                     if chip.clicked() {
@@ -1261,6 +1264,160 @@ pub fn compact_width(ctx: &egui::Context) -> f32 {
     COMPACT_WIDTH.max(theme::traffic_light_inset(ctx))
 }
 
+fn downloads_button(app: &mut App, ui: &mut egui::Ui, palette: &Palette) {
+    let label = crate::i18n::gettext(app.locale, "Downloads");
+    let button = theme::icon_button(
+        ui,
+        Icon::Download,
+        18.0,
+        palette.secondary,
+        palette.text,
+        &format!("{label} (Ctrl+J)"),
+    );
+    let popup_id = button.id.with("popup");
+    if let Some(until) = app.downloads_popup_until {
+        if std::time::Instant::now() < until {
+            if !app.downloads_popup_opened {
+                egui::Popup::open_id(ui.ctx(), popup_id);
+                app.downloads_popup_opened = true;
+            }
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(100));
+        } else {
+            app.downloads_popup_until = None;
+            app.downloads_popup_opened = false;
+            if egui::Popup::is_id_open(ui.ctx(), popup_id) {
+                egui::Popup::close_id(ui.ctx(), popup_id);
+            }
+        }
+    }
+    egui::Popup::menu(&button)
+        .width(300.0)
+        .frame(widgets::menu_frame(palette))
+        .show(|ui| {
+            let active: Vec<_> = app
+                .user_downloads
+                .iter()
+                .map(|(key, download)| (key.clone(), download.clone()))
+                .collect();
+            for ((chat, message, card), download) in active {
+                ui.horizontal(|ui| {
+                    theme::spinner(ui, 16.0, palette.accent);
+                    ui.vertical(|ui| {
+                        let name = if download.name.chars().count() > 34 {
+                            format!(
+                                "{}…",
+                                download.name.chars().take(33).collect::<String>()
+                            )
+                        } else {
+                            download.name.clone()
+                        };
+                        theme::text(ui, name, theme::medium(12.5), palette.text);
+                        let elapsed = download.started.elapsed().as_secs_f64().max(0.1);
+                        let speed = download.received as f64 / elapsed;
+                        let detail = if download.received == 0 {
+                            crate::i18n::gettext(app.locale, "Queued").into_owned()
+                        } else if let Some(total) = download.total {
+                            let percent =
+                                ((download.received as f64 / total.max(1) as f64) * 100.0)
+                                    .clamp(0.0, 100.0);
+                            let eta = if speed > 1.0 {
+                                ((total.saturating_sub(download.received)) as f64 / speed)
+                                    .round()
+                                    .clamp(0.0, u32::MAX as f64)
+                                    as u32
+                            } else {
+                                0
+                            };
+                            if eta > 0 {
+                                format!(
+                                    "{percent:.0}% · {}/s · {}",
+                                    crate::util::bytes(speed as u64),
+                                    crate::util::duration(eta)
+                                )
+                            } else {
+                                format!(
+                                    "{percent:.0}% · {}/s",
+                                    crate::util::bytes(speed as u64)
+                                )
+                            }
+                        } else {
+                            format!(
+                                "{} · {}/s",
+                                crate::util::bytes(download.received),
+                                crate::util::bytes(speed as u64)
+                            )
+                        };
+                        theme::text(ui, detail, theme::regular(11.0), palette.secondary);
+                        if let Some(total) = download.total {
+                            ui.add(
+                                egui::ProgressBar::new(
+                                    download.received as f32 / total.max(1) as f32,
+                                )
+                                .desired_width(205.0),
+                            );
+                        }
+                    });
+                    if theme::icon_button(
+                        ui,
+                        Icon::X,
+                        14.0,
+                        palette.secondary,
+                        palette.text,
+                        &crate::i18n::gettext(app.locale, "Cancel download"),
+                    )
+                    .clicked()
+                    {
+                        app.actions.push(Action::CancelDownload {
+                            card,
+                            chat,
+                            message,
+                        });
+                    }
+                });
+                widgets::menu_separator(ui, palette);
+            }
+
+            let recent: Vec<_> = app
+                .settings
+                .download_history
+                .iter()
+                .filter(|path| path.exists())
+                .take(5)
+                .cloned()
+                .collect();
+            if recent.is_empty() && app.user_downloads.is_empty() {
+                theme::text(
+                    ui,
+                    crate::i18n::gettext(app.locale, "No downloads yet"),
+                    theme::regular(13.0),
+                    palette.secondary,
+                );
+            } else {
+                for path in recent {
+                    let name = path.file_name().map_or_else(
+                        || path.display().to_string(),
+                        |name| name.to_string_lossy().into_owned(),
+                    );
+                    if widgets::menu_item(ui, palette, Some(Icon::FileText), &name) {
+                        app.actions.push(Action::OpenFile(path));
+                    }
+                }
+                if !app.settings.download_history.is_empty() {
+                    widgets::menu_separator(ui, palette);
+                }
+            }
+            let folder = crate::i18n::gettext(app.locale, "Open downloads folder");
+            if widgets::menu_item(ui, palette, Some(Icon::Folder), &folder) {
+                app.actions.push(Action::OpenFolder(app.downloads_dir()));
+            }
+            let history = crate::i18n::gettext(app.locale, "All download history");
+            if widgets::menu_item(ui, palette, Some(Icon::Download), &history) {
+                app.actions.push(Action::ShowDialog(Dialog::Downloads));
+            }
+        });
+}
+
 /// The chat list collapsed to avatars: the list is out of the way, but every
 /// chat is still one click away.
 pub fn compact_show(app: &mut App, ui: &mut egui::Ui) {
@@ -1293,7 +1450,7 @@ pub fn compact_show(app: &mut App, ui: &mut egui::Ui) {
                     18.0,
                     palette.secondary,
                     palette.text,
-                    &super::keys::label("Show the chat list (Ctrl+B)"),
+                    &super::keys::label(crate::i18n::gettext(app.locale, "Show the chat list (Ctrl+B)").as_ref()),
                 )
                 .tab_stop(Stop::Sidebar)
                 .clicked()
@@ -1392,7 +1549,7 @@ fn compact_locked_entry(app: &mut App, ui: &mut egui::Ui) {
         .data_mut(|data| data.insert_temp(compact_locked_id(), response.rect));
     if response
         .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text("Locked chats")
+        .on_hover_text(crate::i18n::gettext(app.locale, "Locked chats"))
         .clicked()
     {
         app.actions.push(Action::OpenLockedFolder);
@@ -1486,12 +1643,12 @@ fn compact_badge_center(avatar: Rect) -> egui::Pos2 {
 
 fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette) {
     if chat.looks_unread()
-        && widgets::menu_item(ui, palette, Some(Icon::CheckCheck), "Mark as read")
+        && widgets::menu_item(ui, palette, Some(Icon::CheckCheck), &crate::i18n::gettext(app.locale, "Mark as read"))
     {
         app.actions.push(Action::MarkRead(chat.id.clone()));
     }
     if !chat.looks_unread()
-        && widgets::menu_item(ui, palette, Some(Icon::MessageCircle), "Mark as unread")
+        && widgets::menu_item(ui, palette, Some(Icon::MessageCircle), &crate::i18n::gettext(app.locale, "Mark as unread"))
     {
         app.actions.push(Action::MarkUnread(chat.id.clone()));
     }
@@ -1546,7 +1703,7 @@ fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette
     }
     let now = crate::util::now();
     if chat.muted(now) {
-        if widgets::menu_item(ui, palette, Some(Icon::Bell), "Unmute") {
+        if widgets::menu_item(ui, palette, Some(Icon::Bell), &crate::i18n::gettext(app.locale, "Unmute")) {
             app.actions.push(Action::SetMuted(chat.id.clone(), None));
         }
     } else {
@@ -1584,17 +1741,17 @@ fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette
     }
     widgets::menu_separator(ui, palette);
     if let Some(phone) = chat.phone()
-        && widgets::menu_item(ui, palette, Some(Icon::Copy), "Copy number")
+        && widgets::menu_item(ui, palette, Some(Icon::Copy), &crate::i18n::gettext(app.locale, "Copy number"))
     {
         app.actions.push(Action::CopyText(format!("+{phone}")));
     }
-    if widgets::menu_item(ui, palette, Some(Icon::Info), "Info") {
+    if widgets::menu_item(ui, palette, Some(Icon::Info), &crate::i18n::gettext(app.locale, "Info")) {
         app.actions
             .push(Action::ShowDialog(Dialog::ChatInfo(chat.id.clone())));
     }
     // Deleting reaches the phone, so it waits for a connection.
     let connected = matches!(app.link, LinkStatus::Connected);
-    if widgets::menu_item_enabled(ui, palette, Some(Icon::Trash), "Delete chat", connected) {
+    if widgets::menu_item_enabled(ui, palette, Some(Icon::Trash), &crate::i18n::gettext(app.locale, "Delete chat"), connected) {
         app.actions
             .push(Action::ShowDialog(Dialog::ConfirmDeleteChat(
                 chat.id.clone(),
@@ -1640,7 +1797,7 @@ fn sound_menu(app: &mut App, ui: &mut egui::Ui, palette: &Palette, chat: &Chat) 
             );
             widgets::menu_item(ui, palette, Some(Icon::Check), &name);
         }
-        if widgets::menu_item(ui, palette, None, "Choose a file…") {
+        if widgets::menu_item(ui, palette, None, &crate::i18n::gettext(app.locale, "Choose a file…")) {
             app.actions.push(Action::PickChatSound(chat.id.clone()));
             ui.close();
         }

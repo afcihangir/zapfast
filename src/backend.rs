@@ -218,6 +218,17 @@ pub enum Command {
         chat: ChatId,
         message: String,
     },
+    /// User-requested download whose progress is shown in the Downloads UI.
+    DownloadForSave {
+        card: Option<usize>,
+        chat: ChatId,
+        message: String,
+    },
+    CancelDownload {
+        card: Option<usize>,
+        chat: ChatId,
+        message: String,
+    },
     /// Requests a profile picture; `full` selects the info-dialog size.
     FetchAvatar {
         id: String,
@@ -422,8 +433,13 @@ pub enum Command {
         about: Option<String>,
         picture: bool,
     },
-    /// Where new downloads go; `None` is the cache.
+    /// Where user-requested downloads go; `None` uses the system Downloads folder.
     SetDownloadFolder(Option<std::path::PathBuf>),
+    /// Saves a copy of an attachment into the configured/system Downloads folder.
+    SaveAttachment {
+        source: std::path::PathBuf,
+        name: String,
+    },
     /// Asks where to save a copy of an attachment, then copies it there.
     SaveAttachmentAs {
         source: std::path::PathBuf,
@@ -848,6 +864,16 @@ pub enum Event {
         message: String,
         result: Result<PathBuf, String>,
     },
+    /// Progress of a user-requested attachment download.
+    DownloadProgress {
+        card: Option<usize>,
+        chat: ChatId,
+        message: String,
+        received: u64,
+        total: Option<u64>,
+    },
+    /// A user-requested copy finished saving to the Downloads folder.
+    AttachmentSaved(Result<PathBuf, String>),
     /// Link-time history sync state.
     Syncing(bool),
     /// Reported history-sync percentage.

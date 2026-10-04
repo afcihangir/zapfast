@@ -1108,6 +1108,7 @@ pub struct Gif {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Dialog {
     Shortcuts,
+    Downloads,
     About,
     ConfirmUnlink,
     ConfirmRemoveAccount(AccountId),
@@ -1366,6 +1367,19 @@ pub enum Action {
         chat: ChatId,
         message: String,
     },
+    /// Downloads media into private cache if needed, then saves a copy into
+    /// the configured/system Downloads folder without opening it.
+    DownloadToFolder {
+        card: Option<usize>,
+        chat: ChatId,
+        message: String,
+        name: String,
+    },
+    CancelDownload {
+        card: Option<usize>,
+        chat: ChatId,
+        message: String,
+    },
     /// Plays or pauses a downloaded voice or audio message.
     PlayVoice {
         message: String,
@@ -1430,6 +1444,12 @@ pub enum Action {
         path: PathBuf,
         name: String,
     },
+    /// Saves an already cached attachment into the configured/system Downloads folder.
+    SaveAttachment {
+        path: PathBuf,
+        name: String,
+    },
+    ClearDownloadHistory,
     OpenUrl(String),
     CopyText(String),
     CopyImage(PathBuf),

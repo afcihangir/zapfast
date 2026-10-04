@@ -10,9 +10,9 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
     let palette = app.palette;
     ui.horizontal(|ui| {
         theme::icon(ui, Icon::ListChecks, 20.0, palette.accent);
-        theme::text(ui, "Create poll", theme::bold(18.0), palette.text);
+        theme::text(ui, crate::i18n::gettext(app.locale, "Create poll"), theme::bold(18.0), palette.text);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, "Close")
+            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, &crate::i18n::gettext(app.locale, "Close"))
                 .clicked()
             {
                 app.actions.push(Action::CloseDialog);
@@ -21,7 +21,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
     });
     ui.add_space(8.0);
     ui.add_enabled_ui(!app.poll_creating, |ui| {
-        theme::text(ui, "Question", theme::medium(13.5), palette.secondary);
+        theme::text(ui, crate::i18n::gettext(app.locale, "Question"), theme::medium(13.5), palette.secondary);
         let format = egui::TextFormat::simple(theme::regular(14.0), palette.text);
         let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap: f32| {
             crate::bidi::layout_field(ui, text.as_str(), &format, wrap)
@@ -31,10 +31,11 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
         } else {
             Align::LEFT
         };
+        let ask_question = crate::i18n::gettext(app.locale, "Ask a question").into_owned();
         ui.add(
             egui::TextEdit::singleline(&mut app.poll_draft.question)
                 .id_salt("poll-question")
-                .hint_text("Ask a question")
+                .hint_text(ask_question)
                 .char_limit(255)
                 .font(theme::regular(14.0))
                 .desired_width(f32::INFINITY)
@@ -42,7 +43,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
                 .layouter(&mut layouter),
         );
         ui.add_space(8.0);
-        theme::text(ui, "Answers", theme::medium(13.5), palette.secondary);
+        theme::text(ui, crate::i18n::gettext(app.locale, "Answers"), theme::medium(13.5), palette.secondary);
         let height = (ui.ctx().content_rect().height() - 320.0).clamp(90.0, 330.0);
         let mut remove = None;
         let removable = app.poll_draft.options.len() > 2;
@@ -93,7 +94,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
             app.poll_draft.options.remove(index);
         }
         if app.poll_draft.options.len() < 12
-            && theme::soft_button(ui, &palette, Some(Icon::Plus), "Add answer", false).clicked()
+            && theme::soft_button(ui, &palette, Some(Icon::Plus), &crate::i18n::gettext(app.locale, "Add answer"), false).clicked()
         {
             app.poll_draft.options.push(String::new());
         }
@@ -114,7 +115,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
         theme::text(ui, *error, theme::regular(12.0), palette.dim);
     }
     ui.horizontal(|ui| {
-        if theme::soft_button(ui, &palette, None, "Cancel", false).clicked() {
+        if theme::soft_button(ui, &palette, None, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
             app.actions.push(Action::CloseDialog);
         }
         ui.add_enabled_ui(
@@ -145,6 +146,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
 pub fn ballot(
     ui: &mut egui::Ui,
     palette: &Palette,
+    locale: crate::i18n::Locale,
     message: &Message,
     width: f32,
     enabled: bool,
@@ -315,7 +317,7 @@ pub fn ballot(
                     palette.dim,
                 );
             } else if !enabled {
-                theme::text(ui, "Reconnect to vote", theme::regular(11.0), palette.dim);
+                theme::text(ui, crate::i18n::gettext(locale, "Reconnect to vote"), theme::regular(11.0), palette.dim);
             }
         });
     if enabled
@@ -405,9 +407,9 @@ pub fn results_button(
 pub fn results(app: &mut App, ui: &mut egui::Ui, chat: &str, id: &str) {
     let palette = app.palette;
     ui.horizontal(|ui| {
-        theme::text(ui, "Poll results", theme::semibold(18.0), palette.text);
+        theme::text(ui, crate::i18n::gettext(app.locale, "Poll results"), theme::semibold(18.0), palette.text);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, "Close")
+            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, &crate::i18n::gettext(app.locale, "Close"))
                 .clicked()
             {
                 app.actions.push(Action::CloseDialog);

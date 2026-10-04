@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crate::app::{ComposerMention, Conversation};
+use crate::app::{ComposerMention, Conversation, DownloadActivity};
 use crate::backend::{Backend, LinkStatus, Waker};
 use crate::model::{
     AccountId, Chat, ChatFilter, ChatId, Contact, Label, Message, PollDraft, StickerPack,
@@ -70,6 +70,10 @@ pub struct Account {
     pub account_privacy: crate::privacy::Snapshot,
     pub interactive_sending: HashSet<(ChatId, String)>,
     pub group_saving: HashSet<ChatId>,
+    /// User-requested saves waiting for their private-cache download to finish.
+    pub(crate) pending_download_saves: HashMap<(ChatId, String, Option<usize>), String>,
+    /// User-visible downloads for this WhatsApp account.
+    pub user_downloads: HashMap<(ChatId, String, Option<usize>), DownloadActivity>,
     pub(crate) reported_online: Option<bool>,
     /// Chats this account may pin; WhatsApp Plus raises it once known.
     pub pin_limit: usize,
@@ -136,6 +140,8 @@ impl Account {
             account_privacy: crate::privacy::Snapshot::default(),
             interactive_sending: HashSet::new(),
             group_saving: HashSet::new(),
+            pending_download_saves: HashMap::new(),
+            user_downloads: HashMap::new(),
             reported_online: None,
             pin_limit: crate::backend::PINNED_CHATS,
         }

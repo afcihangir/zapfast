@@ -699,9 +699,7 @@ fn sections(app: &App) -> Vec<Section> {
         },
     );
     let custom = app.settings.download_folder.clone();
-    let media = custom
-        .clone()
-        .unwrap_or_else(|| app.account().dirs.media_cache_dir());
+    let media = app.downloads_dir();
     files.row(
         translated(locale, "Downloads"),
         media.display().to_string(),
@@ -1142,7 +1140,12 @@ pub fn wallpaper_show(app: &mut App, ui: &mut egui::Ui) {
                             {
                                 app.actions.push(Action::Open(Page::Settings));
                             }
-                            theme::text(ui, "Set chat wallpaper", theme::bold(18.0), palette.text);
+                            theme::text(
+                                ui,
+                                crate::i18n::gettext(app.locale, "Set chat wallpaper"),
+                                theme::bold(18.0),
+                                palette.text,
+                            );
                         },
                     );
 
