@@ -1948,3 +1948,47 @@ msgstr "ZapFast'i güncelle"
 
 msgid "Ready to install"
 msgstr "Yüklemeye hazır"
+
+
+msgid "Quit"
+msgstr "Çık"
+
+
+msgid "Not sent: the message you’re replying to isn’t available on this computer. Cancel the reply to send without a quote."
+msgstr "Gönderilmedi: yanıtladığınız mesaj bu bilgisayarda bulunmuyor. Alıntı olmadan göndermek için yanıtı iptal edin."
+
+
+msgid "History loaded"
+msgstr "Geçmiş yüklendi"
+
+
+msgid "Back online"
+msgstr "Yeniden çevrimiçi"
+
+
+msgid "This device was unlinked from your phone"
+msgstr "Bu cihazın telefonunuzla bağlantısı kaldırıldı"
+
+
+msgid "Open a chat first"
+msgstr "Önce bir sohbet açın"
+
+
+msgid "For safety, open this file yourself from its folder"
+msgstr "Güvenliğiniz için bu dosyayı klasöründen kendiniz açın"
+
+
+msgid "The folder is unavailable"
+msgstr "Klasöre erişilemiyor"
+
+
+msgid "This link type cannot be opened from ZapFast"
+msgstr "Bu bağlantı türü ZapFast üzerinden açılamaz"
+
+
+msgid "Copied"
+msgstr "Kopyalandı"
+
+
+msgid "Sending GIF…"
+msgstr "GIF gönderiliyor…"
