@@ -6685,6 +6685,18 @@ impl Worker {
                 });
                 return;
             };
+            if tracker
+                .as_ref()
+                .is_some_and(|tracker| tracker.cancelled.load(Ordering::Relaxed))
+            {
+                let _ = commands.send(Command::Downloaded {
+                    card,
+                    chat,
+                    id,
+                    result: Err(DOWNLOAD_CANCELLED.to_owned()),
+                });
+                return;
+            }
             let cache_id = card.map_or_else(|| id.clone(), |index| format!("{id}-card-{index}"));
             let path = media_path(&dir, &chat, &cache_id, &mime, file_name.as_deref());
             let result = with_attachment_deadline(ATTACHMENT_TIMEOUT, async {
