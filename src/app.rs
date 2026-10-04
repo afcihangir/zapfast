@@ -8317,7 +8317,7 @@ mod tests {
         ));
         for lockable in [false, true] {
             assert_eq!(
-                super::tray_config(lockable).menu,
+                super::tray_config(lockable, crate::i18n::Locale::English).menu,
                 [
                     fastframe_tray::MenuItem::action(super::TRAY_SHOW, "Show or hide ZapFast"),
                     fastframe_tray::MenuItem::action(super::TRAY_LOCK, "Lock ZapFast")
