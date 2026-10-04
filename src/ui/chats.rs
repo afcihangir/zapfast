@@ -1298,7 +1298,7 @@ fn downloads_button(app: &mut App, ui: &mut egui::Ui, palette: &Palette) {
                 .iter()
                 .map(|(key, download)| (key.clone(), download.clone()))
                 .collect();
-            for ((chat, message, card), download) in active {
+            for ((account, chat, message, card), download) in active {
                 ui.horizontal(|ui| {
                     theme::spinner(ui, 16.0, palette.accent);
                     ui.vertical(|ui| {
@@ -1359,6 +1359,7 @@ fn downloads_button(app: &mut App, ui: &mut egui::Ui, palette: &Palette) {
                     .clicked()
                     {
                         app.actions.push(Action::CancelDownload {
+                            account,
                             card,
                             chat,
                             message,
