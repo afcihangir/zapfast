@@ -23,6 +23,9 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(match dialog {
                 Dialog::Shortcuts => shortcuts_width(ui.ctx().content_rect().width()),
+                Dialog::Downloads => {
+                    520.0_f32.min((ui.ctx().content_rect().width() - 48.0).max(240.0))
+                }
                 Dialog::About => 380.0,
                 Dialog::ConfirmUnlink => 380.0,
                 Dialog::ConfirmRemoveAccount(_) => 380.0,
@@ -61,6 +64,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                 } => interactive_list(app, ui, &chat, &message, button),
                 Dialog::Labels => super::labels::manager(app, ui, &palette),
                 Dialog::Shortcuts => shortcuts(app, ui),
+                Dialog::Downloads => downloads(app, ui),
                 Dialog::About => about(app, ui),
                 Dialog::ConfirmUnlink => confirm_unlink(app, ui),
                 Dialog::ConfirmRemoveAccount(id) => confirm_remove(app, ui, id),
@@ -91,6 +95,117 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     if response.should_close() {
         app.actions.push(Action::CloseDialog);
     }
+}
+
+fn downloads(app: &mut App, ui: &mut egui::Ui) {
+    use super::widgets;
+    let palette = app.palette;
+    ui.horizontal(|ui| {
+        theme::text(
+            ui,
+            crate::i18n::gettext(app.locale, "Downloads"),
+            theme::semibold(20.0),
+            palette.text,
+        );
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if theme::icon_button(
+                ui,
+                Icon::X,
+                16.0,
+                palette.secondary,
+                palette.text,
+                &crate::i18n::gettext(app.locale, "Close"),
+            )
+            .clicked()
+            {
+                app.actions.push(Action::CloseDialog);
+            }
+        });
+    });
+    ui.add_space(4.0);
+
+    let history: Vec<_> = app
+        .settings
+        .download_history
+        .iter()
+        .filter(|path| path.exists())
+        .cloned()
+        .collect();
+    if history.is_empty() {
+        theme::text(
+            ui,
+            crate::i18n::gettext(app.locale, "No downloads yet"),
+            theme::regular(14.0),
+            palette.secondary,
+        );
+        ui.add_space(12.0);
+    } else {
+        egui::ScrollArea::vertical()
+            .id_salt("download-history")
+            .max_height(390.0)
+            .show(ui, |ui| {
+                for path in history {
+                    ui.horizontal(|ui| {
+                        let name = path.file_name().map_or_else(
+                            || path.display().to_string(),
+                            |name| name.to_string_lossy().into_owned(),
+                        );
+                        let open = ui
+                            .add(
+                                egui::Button::new(
+                                    egui::RichText::new(&name)
+                                        .size(13.5)
+                                        .color(palette.text),
+                                )
+                                .fill(egui::Color32::TRANSPARENT)
+                                .frame(false),
+                            )
+                            .on_hover_text(path.display().to_string());
+                        if open.clicked() {
+                            app.actions.push(Action::OpenFile(path.clone()));
+                        }
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            if theme::icon_button(
+                                ui,
+                                Icon::Folder,
+                                15.0,
+                                palette.secondary,
+                                palette.text,
+                                &crate::i18n::gettext(app.locale, "Show in folder"),
+                            )
+                            .clicked()
+                                && let Some(folder) = path.parent()
+                            {
+                                app.actions.push(Action::OpenFolder(folder.to_path_buf()));
+                            }
+                        });
+                    });
+                    widgets::menu_separator(ui, &palette);
+                }
+            });
+    }
+
+    ui.horizontal(|ui| {
+        let open = crate::i18n::gettext(app.locale, "Open downloads folder");
+        if theme::pill_button(ui, &palette, &open, true).clicked() {
+            app.actions.push(Action::OpenFolder(app.downloads_dir()));
+        }
+        if !app.settings.download_history.is_empty() {
+            let clear = crate::i18n::gettext(app.locale, "Clear download history");
+            if theme::pill_button(ui, &palette, &clear, true).clicked() {
+                app.actions.push(Action::ClearDownloadHistory);
+            }
+        }
+    });
+    theme::text(
+        ui,
+        crate::i18n::gettext(
+            app.locale,
+            "Clearing history does not delete downloaded files",
+        ),
+        theme::regular(11.5),
+        palette.secondary,
+    );
 }
 
 fn interactive_list(app: &mut App, ui: &mut egui::Ui, chat: &str, message: &str, button: usize) {
