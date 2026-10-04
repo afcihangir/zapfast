@@ -640,7 +640,7 @@ fastframe_icons::icons! {
         Eye => lucide "eye",
         EyeOff => lucide "eye-off",
         FileText => "file-text",
-        Folder => lucide "folder",
+        Folder => "folder",
         Forward => "forward",
         Gif => "gif",
         Heart => "heart",
