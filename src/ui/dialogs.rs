@@ -23,6 +23,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(match dialog {
                 Dialog::Shortcuts => shortcuts_width(ui.ctx().content_rect().width()),
+                Dialog::Downloads => 520.0_f32.min((ui.ctx().content_rect().width() - 48.0).max(240.0)),
                 Dialog::About => 380.0,
                 Dialog::ConfirmUnlink => 380.0,
                 Dialog::ConfirmRemoveAccount(_) => 380.0,
@@ -61,6 +62,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                 } => interactive_list(app, ui, &chat, &message, button),
                 Dialog::Labels => super::labels::manager(app, ui, &palette),
                 Dialog::Shortcuts => shortcuts(app, ui),
+                Dialog::Downloads => downloads(app, ui),
                 Dialog::About => about(app, ui),
                 Dialog::ConfirmUnlink => confirm_unlink(app, ui),
                 Dialog::ConfirmRemoveAccount(id) => confirm_remove(app, ui, id),
