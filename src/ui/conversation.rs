@@ -252,7 +252,7 @@ fn header(app: &mut App, ui: &mut egui::Ui, chat: &Chat) -> Rect {
                         .width(width)
                         .frame(widgets::menu_frame(&palette))
                         .show(|ui| {
-                            if widgets::menu_item(ui, &palette, Some(Icon::Info), "Info") {
+                            if widgets::menu_item(ui, &palette, Some(Icon::Info), &crate::i18n::gettext(app.locale, "Info")) {
                                 app.actions
                                     .push(Action::ShowDialog(Dialog::ChatInfo(chat.id.clone())));
                             }
@@ -307,11 +307,11 @@ fn header(app: &mut App, ui: &mut egui::Ui, chat: &Chat) -> Rect {
                                     )));
                             }
                             if let Some(phone) = chat.phone()
-                                && widgets::menu_item(ui, &palette, Some(Icon::Copy), "Copy number")
+                                && widgets::menu_item(ui, &palette, Some(Icon::Copy), &crate::i18n::gettext(app.locale, "Copy number"))
                             {
                                 app.actions.push(Action::CopyText(format!("+{phone}")));
                             }
-                            if widgets::menu_item(ui, &palette, Some(Icon::X), "Close chat") {
+                            if widgets::menu_item(ui, &palette, Some(Icon::X), &crate::i18n::gettext(app.locale, "Close chat")) {
                                 app.actions.push(Action::CloseChat);
                             }
                         });
@@ -831,7 +831,7 @@ fn composer(app: &mut App, ui: &mut egui::Ui, chat: &Chat) {
                 }
                 if chat.locked {
                     ui.vertical_centered(|ui| {
-                        theme::text(ui, "Locked chats are read-only in ZapFast", theme::regular(13.5), palette.secondary);
+                        theme::text(ui, crate::i18n::gettext(view.locale, "Locked chats are read-only in ZapFast"), theme::regular(13.5), palette.secondary);
                     });
                     return;
                 }
@@ -856,8 +856,8 @@ fn composer(app: &mut App, ui: &mut egui::Ui, chat: &Chat) {
                         ui.horizontal(|ui| {
                             let width = 230.0;
                             ui.add_space((ui.available_width() - width).max(0.0) / 2.0);
-                            theme::text(ui, "Only", theme::regular(13.5), palette.secondary);
-                            theme::text(ui, "admins", theme::semibold(13.5), palette.accent);
+                            theme::text(ui, crate::i18n::gettext(view.locale, "Only"), theme::regular(13.5), palette.secondary);
+                            theme::text(ui, crate::i18n::gettext(view.locale, "admins"), theme::semibold(13.5), palette.accent);
                             theme::text(
                                 ui,
                                 "can send messages",
@@ -1552,7 +1552,7 @@ fn edit_strip(app: &mut App, ui: &mut egui::Ui) {
         ui.set_width(ui.available_width());
         ui.horizontal(|ui| {
             theme::icon(ui, Icon::Pencil, 16.0, palette.accent);
-            theme::text(ui, "Editing message", theme::semibold(12.5), palette.accent);
+            theme::text(ui, crate::i18n::gettext(view.locale, "Editing message"), theme::semibold(12.5), palette.accent);
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 if theme::icon_button(
                     ui,
@@ -2683,7 +2683,7 @@ fn reaction_affordance(
     }
     if response
         .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text("React")
+        .on_hover_text(crate::i18n::gettext(view.locale, "React"))
         .clicked()
     {
         actions.push(open_reaction_picker_action(&view.chat.id, &message.id));
@@ -2712,7 +2712,7 @@ fn reaction_affordance(
     }
     if reply
         .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text("Reply")
+        .on_hover_text(crate::i18n::gettext(view.locale, "Reply"))
         .clicked()
     {
         actions.push(Action::Reply(message.id.clone()));
@@ -3980,7 +3980,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
                 line.paint(ui, rect.center() - line.size() / 2.0, palette.text);
                 let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
                 let response = if chosen {
-                    response.on_hover_text("Remove your reaction")
+                    response.on_hover_text(crate::i18n::gettext(view.locale, "Remove your reaction"))
                 } else {
                     response
                 };
@@ -4013,7 +4013,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
             }
             if response
                 .on_hover_cursor(egui::CursorIcon::PointingHand)
-                .on_hover_text("React with any emoji")
+                .on_hover_text(crate::i18n::gettext(view.locale, "React with any emoji"))
                 .clicked()
             {
                 actions.push(Action::OpenReactionPicker {
@@ -4026,7 +4026,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
     );
     widgets::menu_separator(ui, &palette);
     if !matches!(message.content, Content::Revoked)
-        && widgets::menu_item(ui, &palette, Some(Icon::Reply), "Reply")
+        && widgets::menu_item(ui, &palette, Some(Icon::Reply), &crate::i18n::gettext(view.locale, "Reply"))
     {
         actions.push(Action::Reply(message.id.clone()));
     }
@@ -4037,14 +4037,14 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
             | Content::PhoneOnly { .. }
             | Content::Poll { .. }
             | Content::Interactive { .. }
-    ) && widgets::menu_item(ui, &palette, Some(Icon::Forward), "Forward")
+    ) && widgets::menu_item(ui, &palette, Some(Icon::Forward), &crate::i18n::gettext(view.locale, "Forward"))
     {
         actions.push(Action::ShowDialog(Dialog::Forward {
             chat: chat.clone(),
             messages: vec![message.id.clone()],
         }));
     }
-    if widgets::menu_item(ui, &palette, Some(Icon::Check), "Select") {
+    if widgets::menu_item(ui, &palette, Some(Icon::Check), &crate::i18n::gettext(view.locale, "Select")) {
         actions.push(Action::SelectMessage(message.id.clone()));
     }
     let text = match &message.content {
@@ -4066,7 +4066,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
         _ => None,
     };
     if let Some(text) = text
-        && widgets::menu_item(ui, &palette, Some(Icon::Copy), "Copy text")
+        && widgets::menu_item(ui, &palette, Some(Icon::Copy), &crate::i18n::gettext(view.locale, "Copy text"))
     {
         let mentions = mentions_of(view, message);
         actions.push(Action::CopyText(markup::plain(&text, &mentions)));
@@ -4078,17 +4078,17 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
     let can_revoke = message.from_me
         && !matches!(message.content, Content::Revoked)
         && age <= crate::app::REVOKE_WINDOW.as_secs() as i64;
-    if can_edit && widgets::menu_item(ui, &palette, Some(Icon::Pencil), "Edit") {
+    if can_edit && widgets::menu_item(ui, &palette, Some(Icon::Pencil), &crate::i18n::gettext(view.locale, "Edit")) {
         actions.push(Action::Edit(message.id.clone()));
     }
-    if can_revoke && widgets::menu_item(ui, &palette, Some(Icon::Trash), "Delete for everyone") {
+    if can_revoke && widgets::menu_item(ui, &palette, Some(Icon::Trash), &crate::i18n::gettext(view.locale, "Delete for everyone")) {
         actions.push(Action::ShowDialog(Dialog::ConfirmDeleteMessage {
             chat: view.chat.id.clone(),
             message: message.id.clone(),
             for_everyone: true,
         }));
     }
-    if widgets::menu_item(ui, &palette, Some(Icon::EyeOff), "Delete for me") {
+    if widgets::menu_item(ui, &palette, Some(Icon::EyeOff), &crate::i18n::gettext(view.locale, "Delete for me")) {
         actions.push(Action::ShowDialog(Dialog::ConfirmDeleteMessage {
             chat: view.chat.id.clone(),
             message: message.id.clone(),
@@ -4208,7 +4208,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
         }));
     }
     // The id helps when looking a message up for a bug report.
-    if widgets::menu_item(ui, &palette, Some(Icon::Copy), "Copy message ID") {
+    if widgets::menu_item(ui, &palette, Some(Icon::Copy), &crate::i18n::gettext(view.locale, "Copy message ID")) {
         actions.push(Action::CopyText(message.id.clone()));
     }
 }
@@ -5173,7 +5173,7 @@ fn carousel_picture(
                 ui.painter().text(
                     rect.center() + vec2(0.0, 24.0),
                     Align2::CENTER_CENTER,
-                    "Could not display this picture. Click to open it.",
+                    crate::i18n::gettext(view.locale, "Could not display this picture. Click to open it."),
                     theme::regular(11.5),
                     view.palette.secondary,
                 );
@@ -5190,7 +5190,7 @@ fn carousel_picture(
                     ui.painter().text(
                         rect.center() + vec2(0.0, 34.0),
                         Align2::CENTER_CENTER,
-                        "Download failed. Click to retry.",
+                        crate::i18n::gettext(view.locale, "Download failed. Click to retry."),
                         theme::regular(11.5),
                         Color32::WHITE,
                     );
@@ -5419,7 +5419,7 @@ fn interactive_buttons(
                     }
                 }
                 InteractiveAction::Copy(code) => {
-                    if response.on_hover_text("Copy code").clicked() {
+                    if response.on_hover_text(crate::i18n::gettext(view.locale, "Copy code")).clicked() {
                         actions.push(Action::CopyText(code.clone()));
                     }
                 }
@@ -5890,7 +5890,7 @@ fn picture(
                     ui.painter().text(
                         rect.center() + vec2(0.0, 24.0),
                         Align2::CENTER_CENTER,
-                        "Could not display this picture. Click to open it.",
+                        crate::i18n::gettext(view.locale, "Could not display this picture. Click to open it."),
                         theme::regular(11.5),
                         palette.secondary,
                     );
@@ -5937,7 +5937,7 @@ fn picture(
                 ui.painter().text(
                     rect.center() + vec2(0.0, 34.0),
                     Align2::CENTER_CENTER,
-                    "Download failed. Click to retry.",
+                    crate::i18n::gettext(view.locale, "Download failed. Click to retry."),
                     theme::regular(11.5),
                     Color32::WHITE,
                 );
@@ -6765,7 +6765,7 @@ fn voice_player(
                         fill,
                         hover,
                         palette.accent,
-                        "Download",
+                        &crate::i18n::gettext(view.locale, "Download"),
                     )
                     .clicked()
                     {
@@ -7033,7 +7033,7 @@ fn selection_bar(app: &mut App, ui: &mut egui::Ui, chat: &str, selected: &[Strin
             18.0,
             palette.secondary,
             palette.text,
-            "Cancel selection",
+            &crate::i18n::gettext(app.locale, "Cancel selection"),
         )
         .clicked()
             || ui.input(|input| input.key_pressed(Key::Escape))
@@ -7047,7 +7047,7 @@ fn selection_bar(app: &mut App, ui: &mut egui::Ui, chat: &str, selected: &[Strin
         };
         theme::text(ui, &count, theme::medium(14.5), palette.text);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::pill_button(ui, &palette, "Forward…", true).clicked() {
+            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Forward…"), true).clicked() {
                 app.actions.push(Action::ShowDialog(Dialog::Forward {
                     chat: chat.to_owned(),
                     messages: selected.to_vec(),
