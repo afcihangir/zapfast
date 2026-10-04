@@ -4112,7 +4112,7 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
                 let open = if matches!(message.content, Content::Video { gif: false, .. }) {
                     crate::i18n::gettext(view.locale, "Open in system player")
                 } else {
-                    "Open file".into()
+                    crate::i18n::gettext(view.locale, "Open file")
                 };
                 if widgets::menu_item(ui, &palette, Some(Icon::ExternalLink), &open) {
                     actions.push(Action::OpenFile(path.clone()));
@@ -4127,36 +4127,56 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
                 {
                     actions.push(Action::CopyImage(path.clone()));
                 }
-                if widgets::menu_item(ui, &palette, Some(Icon::Download), "Save as…") {
+                if widgets::menu_item(
+                    ui,
+                    &palette,
+                    Some(Icon::Download),
+                    &crate::i18n::gettext(view.locale, "Save as…"),
+                ) {
                     actions.push(Action::SaveAttachmentAs {
                         path: path.clone(),
                         name: attachment_name(&message.content, path),
                     });
                 }
                 if let Some(folder) = path.parent()
-                    && widgets::menu_item(ui, &palette, Some(Icon::FileText), "Show in folder")
+                    && widgets::menu_item(
+                        ui,
+                        &palette,
+                        Some(Icon::FileText),
+                        &crate::i18n::gettext(view.locale, "Show in folder"),
+                    )
                 {
                     actions.push(Action::OpenFolder(folder.to_path_buf()));
                 }
             }
             None => {
                 let downloading = matches!(media.state, MediaState::Downloading);
+                let label = if downloading {
+                    crate::i18n::gettext(view.locale, "Downloading…")
+                } else {
+                    crate::i18n::gettext(view.locale, "Download")
+                };
                 if widgets::menu_item_enabled(
                     ui,
                     &palette,
                     Some(Icon::Download),
-                    if downloading {
-                        "Downloading…"
-                    } else {
-                        "Download"
-                    },
+                    &label,
                     !downloading,
                 ) {
-                    actions.push(Action::Download {
-                        card: None,
-                        chat: chat.clone(),
-                        message: message.id.clone(),
-                    });
+                    if let Content::Document { file_name, .. } = &message.content {
+                        actions.push(Action::DownloadToFolder {
+                            card: None,
+                            chat: chat.clone(),
+                            message: message.id.clone(),
+                            name: file_name.clone(),
+                        });
+                    } else {
+                        actions.push(Action::Download {
+                            card: None,
+                            chat: chat.clone(),
+                            message: message.id.clone(),
+                        });
+                    }
                 }
             }
         }
@@ -4531,6 +4551,7 @@ fn content(
                 file_name,
                 &detail.join(" · "),
                 width,
+                true,
                 actions,
             );
             caption.as_ref().and_then(|caption| {
@@ -6004,6 +6025,7 @@ fn video(
             title,
             &detail.join(" · "),
             width,
+            false,
             actions,
         );
         return width;
@@ -6578,6 +6600,7 @@ fn attachment(
     title: &str,
     detail: &str,
     width: f32,
+    download_only: bool,
     actions: &mut Vec<Action>,
 ) {
     let palette = view.palette;
@@ -6600,13 +6623,13 @@ fn attachment(
                 theme::paint_icon(ui, icon, disc, 18.0, palette.accent);
             };
             let action = |ui: &mut egui::Ui| match (&media.path, &media.state) {
-                (Some(_), _) => {
+                (Some(_), _) if !download_only => {
                     theme::icon(ui, Icon::ExternalLink, 18.0, palette.secondary);
                 }
                 (None, MediaState::Downloading) => {
                     theme::spinner(ui, 18.0, palette.accent);
                 }
-                (None, _) => {
+                _ => {
                     theme::icon(ui, Icon::Download, 18.0, palette.secondary);
                 }
             };
@@ -6635,7 +6658,8 @@ fn attachment(
             );
         })
         .response;
-    let auto = ui.is_rect_visible(response.rect)
+    let auto = !download_only
+        && ui.is_rect_visible(response.rect)
         && media.path.is_none()
         && matches!(media.state, MediaState::Idle)
         && view.auto_download
@@ -6661,16 +6685,25 @@ fn attachment(
         )
         .on_hover_cursor(egui::CursorIcon::PointingHand);
     if response.clicked() && !auto {
-        match &media.path {
-            Some(path) => actions.push(Action::OpenFile(path.clone())),
-            None if !matches!(media.state, MediaState::Downloading) => {
-                actions.push(Action::Download {
-                    card: None,
-                    chat: view.chat.id.clone(),
-                    message: message.id.clone(),
-                })
+        if download_only {
+            actions.push(Action::DownloadToFolder {
+                card: None,
+                chat: view.chat.id.clone(),
+                message: message.id.clone(),
+                name: title.to_owned(),
+            });
+        } else {
+            match &media.path {
+                Some(path) => actions.push(Action::OpenFile(path.clone())),
+                None if !matches!(media.state, MediaState::Downloading) => {
+                    actions.push(Action::Download {
+                        card: None,
+                        chat: view.chat.id.clone(),
+                        message: message.id.clone(),
+                    })
+                }
+                None => {}
             }
-            None => {}
         }
     }
 }
