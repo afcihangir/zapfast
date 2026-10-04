@@ -480,9 +480,9 @@ pub struct App {
     /// when the download began. Media stays paused for a short while meanwhile.
     voice_wanted: Option<(ChatId, String, Instant)>,
     /// User-requested saves waiting for their cached media download to finish.
-    pending_download_saves: HashMap<(ChatId, String, Option<usize>), String>,
-    /// User-visible downloads currently queued or transferring.
-    pub user_downloads: HashMap<(ChatId, String, Option<usize>), DownloadActivity>,
+    pending_download_saves: HashMap<(AccountId, ChatId, String, Option<usize>), String>,
+    /// User-visible downloads currently queued or transferring, keyed by account.
+    pub user_downloads: HashMap<(AccountId, ChatId, String, Option<usize>), DownloadActivity>,
     /// Briefly opens the Downloads menu when a user download starts.
     pub downloads_popup_until: Option<Instant>,
     pub downloads_popup_opened: bool,
@@ -783,7 +783,7 @@ fn tray_action(event: fastframe_tray::Event, window_hidden: bool) -> Option<Acti
 ///
 /// "Lock ZapFast" is always in the menu, hidden without a password;
 /// `App::sync_tray` shows or hides it as the password is set or removed.
-fn tray_config(lockable: bool) -> fastframe_tray::Config {
+fn tray_config(lockable: bool, locale: crate::i18n::Locale) -> fastframe_tray::Config {
     use fastframe_tray::MenuItem;
     fastframe_tray::Config {
         id: "zapfast",
@@ -796,10 +796,20 @@ fn tray_config(lockable: bool) -> fastframe_tray::Config {
         // A left click on macOS toggles the window, as on Linux.
         menu_on_click: false,
         menu: vec![
-            MenuItem::action(TRAY_SHOW, "Show or hide ZapFast"),
-            MenuItem::action(TRAY_LOCK, "Lock ZapFast").visible(lockable),
+            MenuItem::action(
+                TRAY_SHOW,
+                crate::i18n::gettext(locale, "Show or hide ZapFast").into_owned(),
+            ),
+            MenuItem::action(
+                TRAY_LOCK,
+                crate::i18n::gettext(locale, "Lock ZapFast").into_owned(),
+            )
+            .visible(lockable),
             MenuItem::Separator,
-            MenuItem::action(TRAY_QUIT, "Quit"),
+            MenuItem::action(
+                TRAY_QUIT,
+                crate::i18n::gettext(locale, "Quit").into_owned(),
+            ),
         ],
     }
 }
@@ -2717,7 +2727,65 @@ impl App {
                 chat,
                 message,
                 result,
-            } => self.handle_media(&chat, &message, card, result),
+            } => {
+                let account = self.account().id.clone();
+                let key = (account, chat.clone(), message.clone(), card);
+                let pending = self.pending_download_saves.remove(&key);
+                let cached = result.as_ref().ok().cloned();
+                if pending.is_some() {
+                    self.user_downloads.remove(&key);
+                }
+                let error = result.as_ref().err().cloned();
+                self.handle_media(&chat, &message, card, result);
+                if let (Some(name), Some(path)) = (pending.clone(), cached) {
+                    self.backend.send(Command::SaveAttachment { source: path, name });
+                } else if pending.is_some() && live {
+                    if error.as_deref() == Some("Download cancelled") {
+                        self.toast(crate::i18n::gettext(self.locale, "Download cancelled"));
+                    } else if let Some(error) = error {
+                        self.toast_error(error);
+                    }
+                }
+            }
+            Event::DownloadProgress {
+                card,
+                chat,
+                message,
+                received,
+                total,
+            } => {
+                let key = (self.account().id.clone(), chat, message, card);
+                if let Some(download) = self.user_downloads.get_mut(&key) {
+                    download.received = received;
+                    download.total = total;
+                }
+            }
+            Event::AttachmentSaved(result) => match result {
+                Ok(path) => {
+                    self.settings.download_history.retain(|entry| entry != &path);
+                    self.settings.download_history.insert(0, path.clone());
+                    self.settings.download_history.truncate(100);
+                    self.mark_settings_dirty();
+                    if live {
+                        let name = path.file_name().map_or_else(
+                            || "file".into(),
+                            |name| name.to_string_lossy().into_owned(),
+                        );
+                        self.toast(
+                            crate::i18n::gettext(self.locale, "Saved {name}")
+                                .replace("{name}", &name),
+                        );
+                    }
+                }
+                Err(error) => {
+                    if live {
+                        self.toast_error(
+                            crate::i18n::gettext(self.locale, "Could not save the attachment: {error}")
+                                .replace("{error}", &error),
+                        );
+                    }
+                }
+            },
             Event::Syncing(syncing) => {
                 if self.syncing && !syncing {
                     self.toast("History loaded");
@@ -4292,6 +4360,84 @@ impl App {
                     message,
                 });
             }
+            Action::DownloadToFolder {
+                card,
+                chat,
+                message,
+                name,
+            } => {
+                let account = self.account().id.clone();
+                let key = (account, chat.clone(), message.clone(), card);
+                let Some((within_limit, downloading, path)) = self
+                    .conversations
+                    .get_mut(&chat)
+                    .and_then(|conversation| conversation.message_mut(&message))
+                    .and_then(|message| message.content.media_at_mut(card))
+                    .map(|media| {
+                        (
+                            media.is_within_download_limit(),
+                            matches!(media.state, MediaState::Downloading),
+                            media.path.clone(),
+                        )
+                    })
+                else {
+                    return;
+                };
+                if !within_limit {
+                    self.toast_error(
+                        crate::i18n::gettext(
+                            self.locale,
+                            "This attachment is larger than the 64 MiB download limit",
+                        ),
+                    );
+                    return;
+                }
+                if let Some(path) = path {
+                    self.backend.send(Command::SaveAttachment { source: path, name });
+                } else {
+                    self.pending_download_saves.insert(key.clone(), name.clone());
+                    self.user_downloads.entry(key).or_insert(DownloadActivity {
+                        name,
+                        received: 0,
+                        total: None,
+                        started: Instant::now(),
+                    });
+                    self.downloads_popup_until = Some(Instant::now() + Duration::from_secs(5));
+                    self.downloads_popup_opened = false;
+                    if !downloading {
+                        if let Some(media) = self
+                            .conversations
+                            .get_mut(&chat)
+                            .and_then(|conversation| conversation.message_mut(&message))
+                            .and_then(|message| message.content.media_at_mut(card))
+                        {
+                            media.state = MediaState::Downloading;
+                        }
+                        self.backend.send(Command::DownloadForSave {
+                            card,
+                            chat,
+                            message,
+                        });
+                    }
+                }
+            }
+            Action::CancelDownload {
+                account,
+                card,
+                chat,
+                message,
+            } => {
+                let key = (account.clone(), chat.clone(), message.clone(), card);
+                self.pending_download_saves.remove(&key);
+                self.user_downloads.remove(&key);
+                if let Some(account_state) = self.accounts.iter().find(|item| item.id == account) {
+                    account_state.backend.send(Command::CancelDownload {
+                        card,
+                        chat,
+                        message,
+                    });
+                }
+            }
             Action::PreviewImage(path) => {
                 if crate::safety::can_preview_image(&path) && path.is_file() {
                     self.image_preview = Some(PreviewState::new(path));
@@ -4354,6 +4500,14 @@ impl App {
             Action::SaveAttachmentAs { path, name } => {
                 self.backend
                     .send(Command::SaveAttachmentAs { source: path, name });
+            }
+            Action::SaveAttachment { path, name } => {
+                self.backend
+                    .send(Command::SaveAttachment { source: path, name });
+            }
+            Action::ClearDownloadHistory => {
+                self.settings.download_history.clear();
+                self.mark_settings_dirty();
             }
             Action::OpenFolder(path) => {
                 if path.is_dir() {
@@ -6414,7 +6568,7 @@ impl App {
         self.settings.download_folder.clone().unwrap_or_else(|| {
             directories::UserDirs::new()
                 .and_then(|dirs| dirs.download_dir().map(std::path::Path::to_path_buf))
-                .unwrap_or_else(|| self.dirs.media_cache_dir())
+                .unwrap_or_else(|| self.account().dirs.media_cache_dir())
         })
     }
 
