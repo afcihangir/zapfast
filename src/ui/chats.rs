@@ -168,9 +168,9 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             // Same as the avatar: the label says what the click
                             // does now, not what it opened.
                             if app.page == Page::Settings {
-                                crate::i18n::gettext(app.locale, "Close settings (Ctrl+,)")
+                                crate::i18n::gettext(app.locale, "Close settings (Ctrl+,)").as_ref()
                             } else {
-                                crate::i18n::gettext(app.locale, "Settings (Ctrl+,)")
+                                crate::i18n::gettext(app.locale, "Settings (Ctrl+,)").as_ref()
                             },
                         )
                         .tab_stop(Stop::Settings)
