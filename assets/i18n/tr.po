@@ -450,9 +450,9 @@ msgid "Cancel"
 msgstr "İptal"
 
 #: src/ui/dialogs.rs:1172
-#, fuzzy
+
 msgid "Remove this account?"
-msgstr "Bu paketi kaldır"
+msgstr "Bu hesap kaldırılsın mı?"
 
 #: src/ui/dialogs.rs:1178
 msgid ""
@@ -461,9 +461,9 @@ msgid ""
 msgstr ""
 
 #: src/ui/dialogs.rs:1187
-#, fuzzy
+
 msgid "Remove"
-msgstr "Fotoğrafı kaldır"
+msgstr "Kaldır"
 
 #: src/ui/dialogs.rs:1207
 msgid "Leave this channel?"
@@ -802,14 +802,14 @@ msgid "Unlink this computer"
 msgstr "Bu bilgisayarın bağlantısını kaldır"
 
 #: src/ui/settings.rs:677 src/ui/settings.rs:1470 src/ui/accounts.rs:123
-#, fuzzy
+
 msgid "Add account"
-msgstr "Hesap"
+msgstr "Hesap ekle"
 
 #: src/ui/settings.rs:678 src/ui/settings.rs:1446
-#, fuzzy
+
 msgid "Remove this account"
-msgstr "Bu paketi kaldır"
+msgstr "Bu hesabı kaldır"
 
 #: src/ui/settings.rs:683
 msgid "Files"
@@ -1096,7 +1096,7 @@ msgstr "Henüz kimse yok"
 
 #: src/app.rs:1368
 msgid "Could not delete the removed account's files"
-msgstr ""
+msgstr "Kaldırılan hesabın dosyaları silinemedi"
 
 #: src/app.rs:1836
 #, rust-format
@@ -1565,19 +1565,82 @@ msgid "After 1 hour"
 msgstr "1 saat sonra"
 
 #: src/account.rs:214
-#, fuzzy, rust-format
+#, rust-format
 msgid "Account {id}"
-msgstr "Hesap"
+msgstr "Hesap {id}"
 
 #: src/ui/accounts.rs:33
 msgid "Switch account"
-msgstr ""
+msgstr "Hesap değiştir"
 
 #: src/ui/accounts.rs:84
 msgid "Not linked"
-msgstr ""
+msgstr "Bağlı değil"
 
 #: src/ui/accounts.rs:232
 #, rust-format
 msgid "{count} unread chats"
-msgstr ""
+msgstr "{count} okunmamış sohbet"
+
+msgid "Cancel download"
+msgstr "İndirmeyi iptal et"
+
+
+msgid "Queued"
+msgstr "Sırada"
+
+
+msgid "No downloads yet"
+msgstr "Henüz indirme yok"
+
+
+msgid "Open downloads folder"
+msgstr "İndirilenler klasörünü aç"
+
+
+msgid "All download history"
+msgstr "Tüm indirme geçmişi"
+
+
+msgid "Clear download history"
+msgstr "İndirme geçmişini temizle"
+
+
+msgid "Clearing history does not delete downloaded files"
+msgstr "Geçmişi temizlemek indirilen dosyaları silmez"
+
+
+msgid "Download cancelled"
+msgstr "İndirme iptal edildi"
+
+
+msgid "Saved {name}"
+msgstr "{name} kaydedildi"
+
+
+msgid "Could not save the attachment: {error}"
+msgstr "Ek kaydedilemedi: {error}"
+
+
+msgid "Show or hide ZapFast"
+msgstr "ZapFast'i göster veya gizle"
+
+
+msgid "Lock ZapFast"
+msgstr "ZapFast'i kilitle"
+
+
+msgid "Downloading…"
+msgstr "İndiriliyor…"
+
+
+msgid "Download"
+msgstr "İndir"
+
+
+msgid "Show in folder"
+msgstr "Klasörde göster"
+
+
+msgid "This attachment is larger than the 64 MiB download limit"
+msgstr "Bu ek 64 MiB indirme sınırından daha büyük"
