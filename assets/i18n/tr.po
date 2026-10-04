@@ -1644,3 +1644,307 @@ msgstr "Klasörde göster"
 
 msgid "This attachment is larger than the 64 MiB download limit"
 msgstr "Bu ek 64 MiB indirme sınırından daha büyük"
+
+
+msgid "Back to chats"
+msgstr "Sohbetlere dön"
+
+
+msgid "Locked chats"
+msgstr "Kilitli sohbetler"
+
+
+msgid "Close settings (Ctrl+,)"
+msgstr "Ayarları kapat (Ctrl+,)"
+
+
+msgid "Settings (Ctrl+,)"
+msgstr "Ayarlar (Ctrl+,)"
+
+
+msgid "New chat"
+msgstr "Yeni sohbet"
+
+
+msgid "Hide the chat list (Ctrl+B)"
+msgstr "Sohbet listesini gizle (Ctrl+B)"
+
+
+msgid "New chat (⌘N)"
+msgstr "Yeni sohbet (⌘N)"
+
+
+msgid "Hide the chat list (⌘B)"
+msgstr "Sohbet listesini gizle (⌘B)"
+
+
+msgid "Open locked chats with your local code"
+msgstr "Kilitli sohbetleri yerel kodunuzla açın"
+
+
+msgid "Show the chat list (Ctrl+B)"
+msgstr "Sohbet listesini göster (Ctrl+B)"
+
+
+msgid "Mark as read"
+msgstr "Okundu olarak işaretle"
+
+
+msgid "Mark as unread"
+msgstr "Okunmadı olarak işaretle"
+
+
+msgid "Copy number"
+msgstr "Numarayı kopyala"
+
+
+msgid "Info"
+msgstr "Bilgi"
+
+
+msgid "Delete chat"
+msgstr "Sohbeti sil"
+
+
+msgid "Close chat"
+msgstr "Sohbeti kapat"
+
+
+msgid "Locked chats are read-only in ZapFast"
+msgstr "Kilitli sohbetler ZapFast'te salt okunurdur"
+
+
+msgid "Only"
+msgstr "Yalnızca"
+
+
+msgid "admins"
+msgstr "yöneticiler"
+
+
+msgid "Enter sends · Shift+Enter for a new line · *bold* _italic_ ~strike~ · Ctrl+V pastes a picture"
+msgstr "Enter gönderir · Shift+Enter yeni satır ekler · *kalın* _italik_ ~üstü çizili~ · Ctrl+V görsel yapıştırır"
+
+
+msgid "Editing message"
+msgstr "Mesaj düzenleniyor"
+
+
+msgid "React"
+msgstr "Tepki ver"
+
+
+msgid "Reply"
+msgstr "Yanıtla"
+
+
+msgid "Remove your reaction"
+msgstr "Tepkinizi kaldır"
+
+
+msgid "React with any emoji"
+msgstr "Herhangi bir emojiyle tepki ver"
+
+
+msgid "Forward"
+msgstr "İlet"
+
+
+msgid "Select"
+msgstr "Seç"
+
+
+msgid "Copy text"
+msgstr "Metni kopyala"
+
+
+msgid "Edit"
+msgstr "Düzenle"
+
+
+msgid "Delete for everyone"
+msgstr "Herkesten sil"
+
+
+msgid "Delete for me"
+msgstr "Benden sil"
+
+
+msgid "Copy message ID"
+msgstr "Mesaj kimliğini kopyala"
+
+
+msgid "Download failed. Click to retry."
+msgstr "İndirme başarısız. Yeniden denemek için tıklayın."
+
+
+msgid "Copy code"
+msgstr "Kodu kopyala"
+
+
+msgid "Could not display this picture. Click to open it."
+msgstr "Bu görüntü gösterilemedi. Açmak için tıklayın."
+
+
+msgid "Cancel selection"
+msgstr "Seçimi iptal et"
+
+
+msgid "Forward…"
+msgstr "İlet…"
+
+
+msgid "Local code"
+msgstr "Yerel kod"
+
+
+msgid "Confirm code"
+msgstr "Kodu doğrula"
+
+
+msgid "Lock this chat?"
+msgstr "Bu sohbet kilitlensin mi?"
+
+
+msgid "Lock chat"
+msgstr "Sohbeti kilitle"
+
+
+msgid "Add contact"
+msgstr "Kişi ekle"
+
+
+msgid "Delete chat?"
+msgstr "Sohbet silinsin mi?"
+
+
+msgid "Clear chat?"
+msgstr "Sohbet temizlensin mi?"
+
+
+msgid "Group invite"
+msgstr "Grup daveti"
+
+
+msgid "Open chat"
+msgstr "Sohbeti aç"
+
+
+msgid "Request to join"
+msgstr "Katılma isteği gönder"
+
+
+msgid "Join group"
+msgstr "Gruba katıl"
+
+
+msgid "Joining…"
+msgstr "Katılınıyor…"
+
+
+msgid "Start over?"
+msgstr "Baştan başlansın mı?"
+
+
+msgid "This unlinks the number on this computer and deletes its local chats. Other accounts stay."
+msgstr "Bu bilgisayardaki numaranın bağlantısını kaldırır ve yerel sohbetlerini siler. Diğer hesaplar kalır."
+
+
+msgid "You will not receive new messages. The local history stays on this computer."
+msgstr "Yeni mesajlar almayacaksınız. Yerel geçmiş bu bilgisayarda kalır."
+
+
+msgid "Link with a phone number"
+msgstr "Telefon numarasıyla bağla"
+
+
+msgid "Get a code"
+msgstr "Kod al"
+
+
+msgid "New contact"
+msgstr "Yeni kişi"
+
+
+msgid "Save contact"
+msgstr "Kişiyi kaydet"
+
+
+msgid "Message"
+msgstr "Mesaj"
+
+
+msgid "Without the password, the only way back in is to unlink. This removes the device from WhatsApp, deletes the chats stored here, and turns the app lock off. You can link again with a new code."
+msgstr "Şifre olmadan yeniden erişmenin tek yolu bağlantıyı kaldırmaktır. Bu işlem cihazı WhatsApp'tan kaldırır, burada saklanan sohbetleri siler ve uygulama kilidini kapatır. Daha sonra yeni bir kodla tekrar bağlayabilirsiniz."
+
+
+msgid "Try again"
+msgstr "Tekrar dene"
+
+
+msgid "Start over…"
+msgstr "Baştan başla…"
+
+
+msgid "No receipts were recorded for this message. Details are available for messages sent from now on."
+msgstr "Bu mesaj için teslim ve okundu bilgisi kaydedilmedi. Ayrıntılar bundan sonra gönderilen mesajlar için kullanılabilir."
+
+
+msgid "Some receipts for this message were not recorded. Details are complete for messages sent from now on."
+msgstr "Bu mesajın bazı teslim ve okundu bilgileri kaydedilmedi. Ayrıntılar bundan sonra gönderilen mesajlarda eksiksizdir."
+
+
+msgid "Searching…"
+msgstr "Aranıyor…"
+
+
+msgid "Right-click any sticker to add it to your favorites. They stay in sync with your phone."
+msgstr "Favorilerinize eklemek için herhangi bir çıkartmaya sağ tıklayın. Favoriler telefonunuzla eşitlenir."
+
+
+msgid "Paste a signal.art link from signalstickers.org, or open a .wastickers file."
+msgstr "signalstickers.org üzerinden bir signal.art bağlantısı yapıştırın veya bir .wastickers dosyası açın."
+
+
+msgid "Start a pack, then right-click any sticker to add it. Or turn a picture into a sticker."
+msgstr "Bir paket başlatın, ardından eklemek istediğiniz çıkartmaya sağ tıklayın. İsterseniz bir görseli çıkartmaya da dönüştürebilirsiniz."
+
+
+msgid "Question"
+msgstr "Soru"
+
+
+msgid "Ask a question"
+msgstr "Bir soru sorun"
+
+
+msgid "Answers"
+msgstr "Yanıtlar"
+
+
+msgid "Add answer"
+msgstr "Yanıt ekle"
+
+
+msgid "Reconnect to vote"
+msgstr "Oy vermek için yeniden bağlanın"
+
+
+msgid "Poll results"
+msgstr "Anket sonuçları"
+
+
+msgid "Could not load your account privacy. Trying again when ZapFast reconnects."
+msgstr "Hesap gizlilik ayarlarınız yüklenemedi. ZapFast yeniden bağlandığında tekrar denenecek."
+
+
+msgid "Set chat wallpaper"
+msgstr "Sohbet duvar kağıdını ayarla"
+
+
+msgid "Update ZapFast"
+msgstr "ZapFast'i güncelle"
+
+
+msgid "Ready to install"
+msgstr "Yüklemeye hazır"
