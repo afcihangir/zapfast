@@ -2788,7 +2788,7 @@ impl App {
             },
             Event::Syncing(syncing) => {
                 if self.syncing && !syncing {
-                    self.toast("History loaded");
+                    self.toast(crate::i18n::gettext(self.locale, "History loaded"));
                 }
                 self.syncing = syncing;
                 if !syncing {
@@ -3025,7 +3025,7 @@ impl App {
                     }
                 }
                 if matches!(self.link, LinkStatus::Disconnected { .. }) {
-                    self.toast("Back online");
+                    self.toast(crate::i18n::gettext(self.locale, "Back online"));
                 }
                 if live {
                     self.dialog = match self.dialog.take() {
@@ -3064,7 +3064,7 @@ impl App {
                 if !self.any_linked() {
                     self.forget_app_lock();
                 }
-                self.toast_error("This device was unlinked from your phone");
+                self.toast_error(crate::i18n::gettext(self.locale, "This device was unlinked from your phone"));
                 return;
             }
             LinkStatus::Failed(message) => self.toast_error(message.clone()),
@@ -3837,7 +3837,7 @@ impl App {
     /// Adds files to the open chat's composer.
     fn stage_files(&mut self, paths: Vec<PathBuf>) {
         if self.open_chat.is_none() {
-            self.toast_error("Open a chat first");
+            self.toast_error(crate::i18n::gettext(self.locale, "Open a chat first"));
             return;
         }
         for path in paths {
@@ -3894,7 +3894,7 @@ impl App {
     #[allow(dead_code)]
     fn send_files(&mut self, paths: Vec<PathBuf>) {
         let Some(chat) = self.open_chat.clone() else {
-            self.toast_error("Open a chat first");
+            self.toast_error(crate::i18n::gettext(self.locale, "Open a chat first"));
             return;
         };
         if paths.is_empty() {
@@ -4490,7 +4490,7 @@ impl App {
                         self.toast_error(format!("Could not open the attachment: {error}"));
                     }
                 } else {
-                    self.toast("For safety, open this file yourself from its folder");
+                    self.toast(crate::i18n::gettext(self.locale, "For safety, open this file yourself from its folder"));
                     if let Some(folder) = path.parent() {
                         self.actions.push(Action::OpenFolder(folder.to_owned()));
                     }
@@ -4515,7 +4515,7 @@ impl App {
                         self.toast_error(format!("Could not open the folder: {error}"));
                     }
                 } else {
-                    self.toast_error("The folder is unavailable");
+                    self.toast_error(crate::i18n::gettext(self.locale, "The folder is unavailable"));
                 }
             }
             Action::OpenUrl(url) => {
@@ -4529,12 +4529,12 @@ impl App {
                 } else if let Some(url) = crate::safety::external_url(&url) {
                     ctx.open_url(egui::OpenUrl::new_tab(url));
                 } else {
-                    self.toast_error("This link type cannot be opened from ZapFast");
+                    self.toast_error(crate::i18n::gettext(self.locale, "This link type cannot be opened from ZapFast"));
                 }
             }
             Action::CopyText(text) => {
                 ctx.copy_text(text);
-                self.toast("Copied");
+                self.toast(crate::i18n::gettext(self.locale, "Copied"));
             }
             Action::CopyImage(path) => {
                 self.backend.send(Command::PrepareClipboardImage(path));
@@ -5075,7 +5075,7 @@ impl App {
             }
             Action::SendGif(gif) => {
                 if let Some(chat) = self.open_chat.clone() {
-                    self.toast("Sending GIF…");
+                    self.toast(crate::i18n::gettext(self.locale, "Sending GIF…"));
                     let quoting = self.reply_to.take();
                     self.backend.send(Command::SendGif { chat, gif, quoting });
                     self.picker = None;
