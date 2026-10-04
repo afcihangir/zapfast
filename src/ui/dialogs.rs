@@ -23,7 +23,9 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(match dialog {
                 Dialog::Shortcuts => shortcuts_width(ui.ctx().content_rect().width()),
-                Dialog::Downloads => 520.0_f32.min((ui.ctx().content_rect().width() - 48.0).max(240.0)),
+                Dialog::Downloads => {
+                    520.0_f32.min((ui.ctx().content_rect().width() - 48.0).max(240.0))
+                }
                 Dialog::About => 380.0,
                 Dialog::ConfirmUnlink => 380.0,
                 Dialog::ConfirmRemoveAccount(_) => 380.0,
@@ -232,7 +234,14 @@ fn interactive_list(app: &mut App, ui: &mut egui::Ui, chat: &str, message: &str,
         let (rect, _) = ui.allocate_exact_size(heading.size(), Sense::hover());
         heading.paint(ui, rect.min, palette.text);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, &crate::i18n::gettext(app.locale, "Close"))
+            if theme::icon_button(
+                ui,
+                Icon::X,
+                16.0,
+                palette.secondary,
+                palette.text,
+                &crate::i18n::gettext(app.locale, "Close"),
+            )
                 .clicked()
             {
                 app.actions.push(Action::CloseDialog);
@@ -453,7 +462,14 @@ fn unlock_locked_chats(app: &mut App, ui: &mut egui::Ui) {
             })
             .inner
             .clicked();
-        if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+        if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
             app.actions.push(Action::CloseDialog);
         }
     });
@@ -477,14 +493,28 @@ fn confirm_lock_chat(app: &mut App, ui: &mut egui::Ui, id: &str) {
         palette.secondary,
     );
     ui.horizontal(|ui| {
-        if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Lock chat"), true).clicked() {
+        if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Lock chat"),
+            true,
+        )
+        .clicked()
+        {
             app.actions.push(Action::SetLocked(id.to_owned(), true));
             app.actions.push(Action::CloseDialog);
             if app.settings.chat_lock_code_hash.is_none() {
                 app.actions.push(Action::OpenLockedFolder);
             }
         }
-        if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+        if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
             app.actions.push(Action::CloseDialog);
         }
     });
@@ -495,7 +525,15 @@ fn new_chat(app: &mut App, ui: &mut egui::Ui) {
     title(ui, app, &crate::i18n::gettext(app.locale, "New chat"));
     // "Message yourself" heads the contact list below, as on the phone.
     ui.horizontal_wrapped(|ui| {
-        if theme::soft_button(ui, &palette, Some(Icon::Plus), &crate::i18n::gettext(app.locale, "Add contact"), false).clicked() {
+        if theme::soft_button(
+            ui,
+            &palette,
+            Some(Icon::Plus),
+            &crate::i18n::gettext(app.locale, "Add contact"),
+            false,
+        )
+        .clicked()
+        {
             app.actions.push(Action::ShowDialog(Dialog::NewContact));
         }
     });
@@ -681,7 +719,14 @@ fn title(ui: &mut egui::Ui, app: &mut App, label: &str) {
     ui.horizontal(|ui| {
         theme::text(ui, label, theme::bold(18.0), palette.text);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::icon_button(ui, Icon::X, 16.0, palette.secondary, palette.text, &crate::i18n::gettext(app.locale, "Close"))
+            if theme::icon_button(
+                ui,
+                Icon::X,
+                16.0,
+                palette.secondary,
+                palette.text,
+                &crate::i18n::gettext(app.locale, "Close"),
+            )
                 .clicked()
             {
                 app.actions.push(Action::CloseDialog);
@@ -866,7 +911,14 @@ fn confirm_delete_chat(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 app.actions.push(Action::DeleteChat(id.to_owned()));
                 app.actions.push(Action::CloseDialog);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -894,7 +946,14 @@ fn confirm_clear_chat(app: &mut App, ui: &mut egui::Ui, id: &str) {
                 app.actions.push(Action::ClearChat(id.to_owned()));
                 app.actions.push(Action::CloseDialog);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -971,7 +1030,14 @@ fn join_group(app: &mut App, ui: &mut egui::Ui) {
             if join.inner.clicked() {
                 app.actions.push(Action::JoinGroup);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -983,7 +1049,14 @@ fn cancel_row(app: &mut App, ui: &mut egui::Ui) {
     ui.add_space(10.0);
     ui.horizontal(|ui| {
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Close"), false).clicked() {
+            if theme::pill_button(
+                ui,
+                &palette,
+                &crate::i18n::gettext(app.locale, "Close"),
+                false,
+            )
+            .clicked()
+            {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -1206,7 +1279,14 @@ fn confirm_start_over(app: &mut App, ui: &mut egui::Ui) {
             if danger_button(ui, app, "Start over") {
                 app.actions.push(Action::StartOverArchive);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -1249,7 +1329,14 @@ fn confirm_delete_message(
                 app.actions.push(action);
                 app.actions.push(Action::CloseDialog);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -1271,7 +1358,14 @@ fn confirm_unlink(app: &mut App, ui: &mut egui::Ui) {
             if danger_button(ui, app, "Unlink") {
                 app.actions.push(Action::Unlink);
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -1432,7 +1526,12 @@ fn pair_with_phone(app: &mut App, ui: &mut egui::Ui) {
             // the number is long enough.
             let get_code = ui
                 .add_enabled_ui(ready, |ui| {
-                    theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Get a code"), true)
+                    theme::pill_button(
+                        ui,
+                        &palette,
+                        &crate::i18n::gettext(app.locale, "Get a code"),
+                        true,
+                    )
                         .on_disabled_hover_text(NUMBER_TOO_SHORT)
                 })
                 .inner;
@@ -1440,7 +1539,14 @@ fn pair_with_phone(app: &mut App, ui: &mut egui::Ui) {
                 app.actions
                     .push(Action::PairWithPhone(app.pair_phone.clone()));
             }
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
         });
@@ -1598,16 +1704,33 @@ fn new_contact(app: &mut App, ui: &mut egui::Ui) {
                     } else {
                         NUMBER_TOO_SHORT
                     };
-                    let save = theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Save contact"), named)
+                    let save = theme::pill_button(
+                        ui,
+                        &palette,
+                        &crate::i18n::gettext(app.locale, "Save contact"),
+                        named,
+                    )
                         .on_disabled_hover_text(hint)
                         .clicked();
-                    let message = theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Message"), !named)
+                    let message = theme::pill_button(
+                        ui,
+                        &palette,
+                        &crate::i18n::gettext(app.locale, "Message"),
+                        !named,
+                    )
                         .on_disabled_hover_text(hint)
                         .clicked();
                     (save, message)
                 })
                 .inner;
-            if theme::pill_button(ui, &palette, &crate::i18n::gettext(app.locale, "Cancel"), false).clicked() {
+            if theme::pill_button(
+            ui,
+            &palette,
+            &crate::i18n::gettext(app.locale, "Cancel"),
+            false,
+        )
+        .clicked()
+        {
                 app.actions.push(Action::CloseDialog);
             }
             // Enter saves a named contact or opens an unnamed chat.
