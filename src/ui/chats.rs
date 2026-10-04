@@ -458,7 +458,10 @@ fn filter_chips(app: &mut App, ui: &mut egui::Ui) {
                         selected,
                     )
                     .tab_stop(Stop::Locked)
-                    .on_hover_text(crate::i18n::gettext(app.locale, "Open locked chats with your local code"));
+                    .on_hover_text(crate::i18n::gettext(
+                        app.locale,
+                        "Open locked chats with your local code",
+                    ));
                     ui.ctx()
                         .data_mut(|data| data.insert_temp(egui::Id::new("locked-chip"), chip.rect));
                     if chip.clicked() {
@@ -1437,7 +1440,9 @@ pub fn compact_show(app: &mut App, ui: &mut egui::Ui) {
                     18.0,
                     palette.secondary,
                     palette.text,
-                    &super::keys::label(crate::i18n::gettext(app.locale, "Show the chat list (Ctrl+B)").as_ref()),
+                    &super::keys::label(
+                        crate::i18n::gettext(app.locale, "Show the chat list (Ctrl+B)").as_ref(),
+                    ),
                 )
                 .tab_stop(Stop::Sidebar)
                 .clicked()
@@ -1630,12 +1635,22 @@ fn compact_badge_center(avatar: Rect) -> egui::Pos2 {
 
 fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette) {
     if chat.looks_unread()
-        && widgets::menu_item(ui, palette, Some(Icon::CheckCheck), &crate::i18n::gettext(app.locale, "Mark as read"))
+        && widgets::menu_item(
+            ui,
+            palette,
+            Some(Icon::CheckCheck),
+            &crate::i18n::gettext(app.locale, "Mark as read"),
+        )
     {
         app.actions.push(Action::MarkRead(chat.id.clone()));
     }
     if !chat.looks_unread()
-        && widgets::menu_item(ui, palette, Some(Icon::MessageCircle), &crate::i18n::gettext(app.locale, "Mark as unread"))
+        && widgets::menu_item(
+            ui,
+            palette,
+            Some(Icon::MessageCircle),
+            &crate::i18n::gettext(app.locale, "Mark as unread"),
+        )
     {
         app.actions.push(Action::MarkUnread(chat.id.clone()));
     }
@@ -1690,7 +1705,12 @@ fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette
     }
     let now = crate::util::now();
     if chat.muted(now) {
-        if widgets::menu_item(ui, palette, Some(Icon::Bell), &crate::i18n::gettext(app.locale, "Unmute")) {
+        if widgets::menu_item(
+            ui,
+            palette,
+            Some(Icon::Bell),
+            &crate::i18n::gettext(app.locale, "Unmute"),
+        ) {
             app.actions.push(Action::SetMuted(chat.id.clone(), None));
         }
     } else {
@@ -1728,17 +1748,33 @@ fn context_menu(app: &mut App, ui: &mut egui::Ui, chat: &Chat, palette: &Palette
     }
     widgets::menu_separator(ui, palette);
     if let Some(phone) = chat.phone()
-        && widgets::menu_item(ui, palette, Some(Icon::Copy), &crate::i18n::gettext(app.locale, "Copy number"))
+        && widgets::menu_item(
+            ui,
+            palette,
+            Some(Icon::Copy),
+            &crate::i18n::gettext(app.locale, "Copy number"),
+        )
     {
         app.actions.push(Action::CopyText(format!("+{phone}")));
     }
-    if widgets::menu_item(ui, palette, Some(Icon::Info), &crate::i18n::gettext(app.locale, "Info")) {
+    if widgets::menu_item(
+        ui,
+        palette,
+        Some(Icon::Info),
+        &crate::i18n::gettext(app.locale, "Info"),
+    ) {
         app.actions
             .push(Action::ShowDialog(Dialog::ChatInfo(chat.id.clone())));
     }
     // Deleting reaches the phone, so it waits for a connection.
     let connected = matches!(app.link, LinkStatus::Connected);
-    if widgets::menu_item_enabled(ui, palette, Some(Icon::Trash), &crate::i18n::gettext(app.locale, "Delete chat"), connected) {
+    if widgets::menu_item_enabled(
+        ui,
+        palette,
+        Some(Icon::Trash),
+        &crate::i18n::gettext(app.locale, "Delete chat"),
+        connected,
+    ) {
         app.actions
             .push(Action::ShowDialog(Dialog::ConfirmDeleteChat(
                 chat.id.clone(),
@@ -1784,7 +1820,12 @@ fn sound_menu(app: &mut App, ui: &mut egui::Ui, palette: &Palette, chat: &Chat) 
             );
             widgets::menu_item(ui, palette, Some(Icon::Check), &name);
         }
-        if widgets::menu_item(ui, palette, None, &crate::i18n::gettext(app.locale, "Choose a file…")) {
+        if widgets::menu_item(
+            ui,
+            palette,
+            None,
+            &crate::i18n::gettext(app.locale, "Choose a file…"),
+        ) {
             app.actions.push(Action::PickChatSound(chat.id.clone()));
             ui.close();
         }
