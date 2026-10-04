@@ -2780,7 +2780,10 @@ impl App {
                 Err(error) => {
                     if live {
                         self.toast_error(
-                            crate::i18n::gettext(self.locale, "Could not save the attachment: {error}")
+                            crate::i18n::gettext(
+                                self.locale,
+                                "Could not save the attachment: {error}",
+                            )
                                 .replace("{error}", &error),
                         );
                     }
@@ -3064,7 +3067,10 @@ impl App {
                 if !self.any_linked() {
                     self.forget_app_lock();
                 }
-                self.toast_error(crate::i18n::gettext(self.locale, "This device was unlinked from your phone"));
+                self.toast_error(crate::i18n::gettext(
+                    self.locale,
+                    "This device was unlinked from your phone",
+                ));
                 return;
             }
             LinkStatus::Failed(message) => self.toast_error(message.clone()),
@@ -4490,7 +4496,10 @@ impl App {
                         self.toast_error(format!("Could not open the attachment: {error}"));
                     }
                 } else {
-                    self.toast(crate::i18n::gettext(self.locale, "For safety, open this file yourself from its folder"));
+                    self.toast(crate::i18n::gettext(
+                        self.locale,
+                        "For safety, open this file yourself from its folder",
+                    ));
                     if let Some(folder) = path.parent() {
                         self.actions.push(Action::OpenFolder(folder.to_owned()));
                     }
@@ -4515,7 +4524,10 @@ impl App {
                         self.toast_error(format!("Could not open the folder: {error}"));
                     }
                 } else {
-                    self.toast_error(crate::i18n::gettext(self.locale, "The folder is unavailable"));
+                    self.toast_error(crate::i18n::gettext(
+                        self.locale,
+                        "The folder is unavailable",
+                    ));
                 }
             }
             Action::OpenUrl(url) => {
@@ -4529,7 +4541,10 @@ impl App {
                 } else if let Some(url) = crate::safety::external_url(&url) {
                     ctx.open_url(egui::OpenUrl::new_tab(url));
                 } else {
-                    self.toast_error(crate::i18n::gettext(self.locale, "This link type cannot be opened from ZapFast"));
+                    self.toast_error(crate::i18n::gettext(
+                        self.locale,
+                        "This link type cannot be opened from ZapFast",
+                    ));
                 }
             }
             Action::CopyText(text) => {
