@@ -1743,3 +1743,18 @@ msgstr "Ayarlar (Ctrl+,)"
 
 msgid "Show the chat list (Ctrl+B)"
 msgstr "Sohbet listesini göster (Ctrl+B)"
+
+msgid "Saved {name}"
+msgstr "Kaydedildi: {name}"
+
+msgid "Could not save the attachment"
+msgstr "Ek kaydedilemedi"
+
+msgid "Download"
+msgstr "İndir"
+
+msgid "Downloading…"
+msgstr "İndiriliyor…"
+
+msgid "This attachment is larger than the 64 MiB download limit"
+msgstr "Bu ek 64 MiB indirme sınırından daha büyük"
