@@ -961,12 +961,17 @@ fn join_group(app: &mut App, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             let label = match (member, info.approval) {
-                (true, _) => "Open chat",
-                (false, true) => "Request to join",
-                (false, false) => "Join group",
+                (true, _) => crate::i18n::gettext(app.locale, "Open chat"),
+                (false, true) => crate::i18n::gettext(app.locale, "Request to join"),
+                (false, false) => crate::i18n::gettext(app.locale, "Join group"),
+            };
+            let button_label = if joining {
+                crate::i18n::gettext(app.locale, "Joining…")
+            } else {
+                label
             };
             let join = ui.add_enabled_ui(!joining, |ui| {
-                theme::pill_button(ui, &palette, if joining { "Joining…" } else { label }, true)
+                theme::pill_button(ui, &palette, button_label.as_ref(), true)
             });
             if join.inner.clicked() {
                 app.actions.push(Action::JoinGroup);
