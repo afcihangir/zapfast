@@ -3038,6 +3038,8 @@ impl App {
                 let account = self.account().id.clone();
                 self.poll_voting.clear();
                 self.interactive_sending.clear();
+                self.pending_download_saves.clear();
+                self.user_downloads.clear();
                 self.poll_creating = false;
                 self.poll_draft = Default::default();
                 self.notifications.clear_account(&account);
