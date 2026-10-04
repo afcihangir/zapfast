@@ -831,7 +831,7 @@ fn composer(app: &mut App, ui: &mut egui::Ui, chat: &Chat) {
                 }
                 if chat.locked {
                     ui.vertical_centered(|ui| {
-                        theme::text(ui, crate::i18n::gettext(view.locale, "Locked chats are read-only in ZapFast"), theme::regular(13.5), palette.secondary);
+                        theme::text(ui, crate::i18n::gettext(app.locale, "Locked chats are read-only in ZapFast"), theme::regular(13.5), palette.secondary);
                     });
                     return;
                 }
@@ -856,8 +856,8 @@ fn composer(app: &mut App, ui: &mut egui::Ui, chat: &Chat) {
                         ui.horizontal(|ui| {
                             let width = 230.0;
                             ui.add_space((ui.available_width() - width).max(0.0) / 2.0);
-                            theme::text(ui, crate::i18n::gettext(view.locale, "Only"), theme::regular(13.5), palette.secondary);
-                            theme::text(ui, crate::i18n::gettext(view.locale, "admins"), theme::semibold(13.5), palette.accent);
+                            theme::text(ui, crate::i18n::gettext(app.locale, "Only"), theme::regular(13.5), palette.secondary);
+                            theme::text(ui, crate::i18n::gettext(app.locale, "admins"), theme::semibold(13.5), palette.accent);
                             theme::text(
                                 ui,
                                 "can send messages",
@@ -1552,7 +1552,7 @@ fn edit_strip(app: &mut App, ui: &mut egui::Ui) {
         ui.set_width(ui.available_width());
         ui.horizontal(|ui| {
             theme::icon(ui, Icon::Pencil, 16.0, palette.accent);
-            theme::text(ui, crate::i18n::gettext(view.locale, "Editing message"), theme::semibold(12.5), palette.accent);
+            theme::text(ui, crate::i18n::gettext(app.locale, "Editing message"), theme::semibold(12.5), palette.accent);
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 if theme::icon_button(
                     ui,
@@ -4755,6 +4755,7 @@ fn content(
             super::polls::ballot(
                 ui,
                 &palette,
+                view.locale,
                 message,
                 width,
                 view.connected,
