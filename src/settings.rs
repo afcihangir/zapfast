@@ -435,9 +435,11 @@ pub struct Settings {
     /// Play the message sound for ordinary group messages. Mentions and
     /// replies to us sound either way.
     pub group_sounds: bool,
-    /// Folder for new downloads. `None` keeps them in the cache. Files
-    /// already downloaded stay where they are when this changes.
+    /// Folder for user-requested downloads. `None` uses the operating
+    /// system's Downloads folder. Preview/playback media remains in app cache.
     pub download_folder: Option<std::path::PathBuf>,
+    /// User-visible downloads, newest first. Clearing this list never deletes files.
+    pub download_history: Vec<std::path::PathBuf>,
     /// Proxy for WhatsApp, media, and updates, such as
     /// `socks5h://127.0.0.1:9050`. Empty follows `ALL_PROXY` / `HTTPS_PROXY`.
     pub proxy: String,
@@ -505,6 +507,7 @@ impl Default for Settings {
             mention_sound: NotificationSound::Alert,
             group_sounds: true,
             download_folder: None,
+            download_history: Vec::new(),
             proxy: String::new(),
             check_for_updates: true,
             download_updates_automatically: false,
