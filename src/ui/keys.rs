@@ -64,6 +64,11 @@ pub fn handle(app: &mut App, ctx: &egui::Context) {
             key(Modifiers::COMMAND, Key::L, Action::FocusComposer);
         }
         key(Modifiers::COMMAND, Key::B, Action::ToggleSidebar);
+        key(
+            Modifiers::COMMAND,
+            Key::J,
+            Action::ShowDialog(Dialog::Downloads),
+        );
         key(Modifiers::COMMAND, Key::Comma, Action::ToggleSettings);
         key(Modifiers::COMMAND, Key::Q, Action::Quit);
         key(Modifiers::COMMAND, Key::W, Action::CloseWindow);
