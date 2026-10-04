@@ -155,6 +155,11 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                         );
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        let settings_label = if app.page == Page::Settings {
+                            crate::i18n::gettext(app.locale, "Close settings (Ctrl+,)")
+                        } else {
+                            crate::i18n::gettext(app.locale, "Settings (Ctrl+,)")
+                        };
                         if theme::icon_button(
                             ui,
                             Icon::Settings,
@@ -167,11 +172,7 @@ fn header(app: &mut App, ui: &mut egui::Ui) {
                             palette.text,
                             // Same as the avatar: the label says what the click
                             // does now, not what it opened.
-                            if app.page == Page::Settings {
-                                crate::i18n::gettext(app.locale, "Close settings (Ctrl+,)").as_ref()
-                            } else {
-                                crate::i18n::gettext(app.locale, "Settings (Ctrl+,)").as_ref()
-                            },
+                            settings_label.as_ref(),
                         )
                         .tab_stop(Stop::Settings)
                         .clicked()
