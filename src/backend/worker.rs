@@ -6,10 +6,13 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{self, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::time::{Duration, Instant};
 
-use tokio::sync::mpsc;
+use tokio::sync::{Semaphore, mpsc};
 use whatsapp_rust::download::MediaType;
 use whatsapp_rust::features::message_edit::{
     SecretEncKind, decrypt_secret_encrypted_with_fallback, extract_secret_encrypted,
@@ -77,6 +80,8 @@ const PROFILE_PICTURE_SIDE: u32 = 640;
 const STICKER_FETCH_LIMIT: usize = 40;
 const ATTACHMENT_LIMIT_ERROR: &str = "This attachment is larger than the 64 MiB download limit";
 const ATTACHMENT_TIMEOUT: Duration = Duration::from_secs(120);
+const MAX_ACTIVE_DOWNLOADS: usize = 6;
+const DOWNLOAD_CANCELLED: &str = "Download cancelled";
 
 async fn with_attachment_deadline<T>(
     duration: Duration,
@@ -132,6 +137,78 @@ impl<W: DownloadWriter> DownloadWriter for LimitedWriter<W> {
     }
 }
 
+#[derive(Clone)]
+struct DownloadTracker {
+    events: std::sync::mpsc::Sender<Event>,
+    waker: Waker,
+    card: Option<usize>,
+    chat: ChatId,
+    message: String,
+    total: Option<u64>,
+    cancelled: Arc<AtomicBool>,
+}
+
+struct ProgressWriter<W> {
+    inner: W,
+    tracker: Option<DownloadTracker>,
+    last_emit: Instant,
+}
+
+impl<W> ProgressWriter<W> {
+    fn new(inner: W, tracker: Option<DownloadTracker>) -> Self {
+        Self {
+            inner,
+            tracker,
+            last_emit: Instant::now() - Duration::from_secs(1),
+        }
+    }
+}
+
+impl<W: Write + Seek> Write for ProgressWriter<W> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        if self
+            .tracker
+            .as_ref()
+            .is_some_and(|tracker| tracker.cancelled.load(Ordering::Relaxed))
+        {
+            return Err(io::Error::other(DOWNLOAD_CANCELLED));
+        }
+        let written = self.inner.write(bytes)?;
+        if let Some(tracker) = &self.tracker {
+            let received = self.inner.stream_position()?;
+            let complete = tracker.total.is_some_and(|total| received >= total);
+            if complete || self.last_emit.elapsed() >= Duration::from_millis(100) {
+                let _ = tracker.events.send(Event::DownloadProgress {
+                    card: tracker.card,
+                    chat: tracker.chat.clone(),
+                    message: tracker.message.clone(),
+                    received,
+                    total: tracker.total,
+                });
+                tracker.waker.wake();
+                self.last_emit = Instant::now();
+            }
+        }
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
+impl<W: Seek> Seek for ProgressWriter<W> {
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        self.inner.seek(position)
+    }
+}
+
+impl<W: DownloadWriter> DownloadWriter for ProgressWriter<W> {
+    fn truncate(&mut self, len: u64) -> io::Result<()> {
+        self.inner.truncate(len)
+    }
+}
+
 fn attachment_is_too_large(size: Option<u64>) -> bool {
     size.is_some_and(|size| size > ATTACHMENT_DOWNLOAD_LIMIT)
 }
@@ -143,6 +220,16 @@ async fn download_attachment(
     dir: &Path,
     path: &Path,
 ) -> Result<PathBuf, String> {
+    download_attachment_tracked(client, downloadable, dir, path, None).await
+}
+
+async fn download_attachment_tracked(
+    client: &Client,
+    downloadable: &dyn Downloadable,
+    dir: &Path,
+    path: &Path,
+    tracker: Option<DownloadTracker>,
+) -> Result<PathBuf, String> {
     if attachment_is_too_large(downloadable.file_length()) {
         return Err(ATTACHMENT_LIMIT_ERROR.to_owned());
     }
@@ -153,7 +240,10 @@ async fn download_attachment(
     let result = client
         .download_to_writer(
             downloadable,
-            LimitedWriter::new(file, ATTACHMENT_DOWNLOAD_LIMIT),
+            ProgressWriter::new(
+                LimitedWriter::new(file, ATTACHMENT_DOWNLOAD_LIMIT),
+                tracker,
+            ),
         )
         .await;
     match result {
@@ -534,6 +624,8 @@ pub async fn run(
         first_names_recovered,
         first_names_recovering: false,
         downloads: HashSet::new(),
+        download_cancels: HashMap::new(),
+        download_slots: Arc::new(Semaphore::new(MAX_ACTIVE_DOWNLOADS)),
         read_sync: ReadSync::default(),
         favorite_chats: Default::default(),
         poll_decrypting: 0,
@@ -823,6 +915,10 @@ struct Worker {
     first_names_recovering: bool,
     /// Active attachment downloads by chat, message id, and carousel card.
     downloads: HashSet<(ChatId, String, Option<usize>)>,
+    /// Cancellation flags for user-visible downloads.
+    download_cancels: HashMap<(ChatId, String, Option<usize>), Arc<AtomicBool>>,
+    /// Shared cap for attachment transfers; extra downloads wait in order.
+    download_slots: Arc<Semaphore>,
     /// Serial forward in flight. The next send waits for the running one.
     forward_queue: Option<ForwardQueue<ForwardJob>>,
 }
@@ -1573,19 +1669,25 @@ impl Worker {
         }
     }
 
-    /// Where a new download goes: the chosen folder while it can be
-    /// created, otherwise the cache, so an unplugged drive does not stop
-    /// downloads.
+    /// Where a user-visible download goes. A chosen folder wins; otherwise
+    /// use the desktop Downloads directory. The private media cache is only a
+    /// last-resort fallback when the desktop has no usable Downloads folder.
     fn download_dir(&self) -> PathBuf {
+        let fallback = || {
+            directories::UserDirs::new()
+                .and_then(|dirs| dirs.download_dir().map(Path::to_path_buf))
+                .filter(|folder| std::fs::create_dir_all(folder).is_ok() && folder.is_dir())
+                .unwrap_or_else(|| self.dirs.media_cache_dir())
+        };
         match &self.download_folder {
             Some(folder) if std::fs::create_dir_all(folder).is_ok() && folder.is_dir() => {
                 folder.clone()
             }
             Some(_) => {
-                log::warn!("the download folder is unavailable; using the cache");
-                self.dirs.media_cache_dir()
+                log::warn!("the chosen download folder is unavailable; using Downloads");
+                fallback()
             }
-            None => self.dirs.media_cache_dir(),
+            None => fallback(),
         }
     }
 
@@ -4449,7 +4551,21 @@ impl Worker {
                 card,
                 chat,
                 message,
-            } => self.download_media(chat, message, card),
+            } => self.download_media(chat, message, card, false),
+            Command::DownloadForSave {
+                card,
+                chat,
+                message,
+            } => self.download_media(chat, message, card, true),
+            Command::CancelDownload {
+                card,
+                chat,
+                message,
+            } => {
+                if let Some(cancel) = self.download_cancels.get(&(chat, message, card)) {
+                    cancel.store(true, Ordering::Relaxed);
+                }
+            }
             Command::FetchAvatar { id, full } => self.fetch_avatar(id, full),
             Command::EditText {
                 chat,
@@ -4706,6 +4822,44 @@ impl Worker {
                         let _ = events.send(Event::NotificationSoundPicked { mention, path });
                         waker.wake();
                     }
+                });
+            }
+            Command::SaveAttachment { source, name } => {
+                let events = self.events.clone();
+                let waker = self.waker.clone();
+                let dir = self.download_dir();
+                tokio::task::spawn_blocking(move || {
+                    let result = (|| -> Result<PathBuf, String> {
+                        std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+                        let clean = Path::new(&name)
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .filter(|name| !name.trim().is_empty())
+                            .unwrap_or("attachment");
+                        let base = Path::new(clean);
+                        let stem = base
+                            .file_stem()
+                            .and_then(|part| part.to_str())
+                            .filter(|part| !part.is_empty())
+                            .unwrap_or("attachment");
+                        let extension = base.extension().and_then(|part| part.to_str());
+                        let mut target = dir.join(clean);
+                        let mut index = 1u32;
+                        while target.exists() {
+                            let file = match extension {
+                                Some(extension) if !extension.is_empty() => {
+                                    format!("{stem} ({index}).{extension}")
+                                }
+                                _ => format!("{stem} ({index})"),
+                            };
+                            target = dir.join(file);
+                            index = index.saturating_add(1);
+                        }
+                        std::fs::copy(&source, &target).map_err(|error| error.to_string())?;
+                        Ok(target)
+                    })();
+                    let _ = events.send(Event::AttachmentSaved(result));
+                    waker.wake();
                 });
             }
             Command::SaveAttachmentAs { source, name } => {
@@ -6345,10 +6499,16 @@ impl Worker {
     }
 
     fn download(&mut self, chat: ChatId, id: String) {
-        self.download_media(chat, id, None);
+        self.download_media(chat, id, None, false);
     }
 
-    fn download_media(&mut self, chat: ChatId, id: String, card: Option<usize>) {
+    fn download_media(
+        &mut self,
+        chat: ChatId,
+        id: String,
+        card: Option<usize>,
+        tracked: bool,
+    ) {
         if !self.downloads.insert((chat.clone(), id.clone(), card)) {
             return;
         }
@@ -6498,13 +6658,45 @@ impl Worker {
             }
             None
         };
-        let dir = self.download_dir();
+        let dir = self.dirs.media_cache_dir();
         let commands = self.commands.clone();
+        let slots = self.download_slots.clone();
+        let cancel = tracked.then(|| Arc::new(AtomicBool::new(false)));
+        if let Some(cancel) = &cancel {
+            self.download_cancels
+                .insert((chat.clone(), id.clone(), card), cancel.clone());
+        }
+        let tracker = cancel.map(|cancelled| DownloadTracker {
+            events: self.events.clone(),
+            waker: self.waker.clone(),
+            card,
+            chat: chat.clone(),
+            message: id.clone(),
+            total: downloadable.file_length(),
+            cancelled,
+        });
         tokio::spawn(async move {
+            let Ok(_permit) = slots.acquire_owned().await else {
+                let _ = commands.send(Command::Downloaded {
+                    card,
+                    chat,
+                    id,
+                    result: Err("Download queue closed".to_owned()),
+                });
+                return;
+            };
             let cache_id = card.map_or_else(|| id.clone(), |index| format!("{id}-card-{index}"));
             let path = media_path(&dir, &chat, &cache_id, &mime, file_name.as_deref());
             let result = with_attachment_deadline(ATTACHMENT_TIMEOUT, async {
-                match download_attachment(&client, &*downloadable, &dir, &path).await {
+                match download_attachment_tracked(
+                    &client,
+                    &*downloadable,
+                    &dir,
+                    &path,
+                    tracker.clone(),
+                )
+                .await
+                {
                     Ok(path) => Ok(path),
                     Err(error) => {
                         let text = error.to_string();
@@ -6523,8 +6715,14 @@ impl Worker {
                                     Ok(MediaRetryResult::Success { direct_path }) => {
                                         match refreshed(direct_path) {
                                             Some(again) => {
-                                                download_attachment(&client, &*again, &dir, &path)
-                                                    .await
+                                                download_attachment_tracked(
+                                                    &client,
+                                                    &*again,
+                                                    &dir,
+                                                    &path,
+                                                    tracker.clone(),
+                                                )
+                                                .await
                                             }
                                             None => Err(text),
                                         }
@@ -6565,6 +6763,7 @@ impl Worker {
             let _ = self.archive.put_media_path_at(&chat, &id, card, Some(path));
         }
         self.downloads.remove(&(chat.clone(), id.clone(), card));
+        self.download_cancels.remove(&(chat.clone(), id.clone(), card));
         let for_picker = self.sticker_downloads.remove(&(chat.clone(), id.clone()));
         self.emit(Event::Media {
             card,
@@ -10315,7 +10514,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn downloads_use_the_chosen_folder_and_fall_back_to_the_cache() {
+    async fn downloads_use_the_chosen_folder_and_never_require_app_cache() {
         let (mut worker, _events, _, _) = receipt_tests::worker();
         let root = std::env::temp_dir().join(format!("zapfast-downloads-{}", std::process::id()));
         let chosen = root.join("Downloads/WhatsApp");
@@ -10324,12 +10523,18 @@ mod tests {
             .await;
         assert_eq!(worker.download_dir(), chosen);
         assert!(chosen.is_dir(), "the folder is created when needed");
-        // A folder that cannot exist, such as one below a file, falls back.
+
+        // A broken custom folder falls back to the operating system's Downloads
+        // directory when one exists, and only then to the private cache.
+        std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("file"), b"").unwrap();
         worker.download_folder = Some(root.join("file/inside"));
-        assert_eq!(worker.download_dir(), worker.dirs.media_cache_dir());
+        let fallback = worker.download_dir();
+        assert!(fallback.is_dir() || fallback == worker.dirs.media_cache_dir());
+
         worker.download_folder = None;
-        assert_eq!(worker.download_dir(), worker.dirs.media_cache_dir());
+        let default = worker.download_dir();
+        assert!(default.is_dir() || default == worker.dirs.media_cache_dir());
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -11432,6 +11637,8 @@ mod receipt_tests {
             first_names_recovered: true,
             first_names_recovering: false,
             downloads: HashSet::new(),
+            download_cancels: HashMap::new(),
+            download_slots: Arc::new(Semaphore::new(MAX_ACTIVE_DOWNLOADS)),
             read_sync: ReadSync::default(),
             favorite_chats: Default::default(),
             poll_decrypting: 0,
