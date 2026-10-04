@@ -31,10 +31,11 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
         } else {
             Align::LEFT
         };
+        let ask_question = crate::i18n::gettext(app.locale, "Ask a question").into_owned();
         ui.add(
             egui::TextEdit::singleline(&mut app.poll_draft.question)
                 .id_salt("poll-question")
-                .hint_text(crate::i18n::gettext(app.locale, "Ask a question"))
+                .hint_text(ask_question)
                 .char_limit(255)
                 .font(theme::regular(14.0))
                 .desired_width(f32::INFINITY)
@@ -145,6 +146,7 @@ pub fn create(app: &mut App, ui: &mut egui::Ui, chat: &str) {
 pub fn ballot(
     ui: &mut egui::Ui,
     palette: &Palette,
+    locale: crate::i18n::Locale,
     message: &Message,
     width: f32,
     enabled: bool,
@@ -315,7 +317,7 @@ pub fn ballot(
                     palette.dim,
                 );
             } else if !enabled {
-                theme::text(ui, crate::i18n::gettext(app.locale, "Reconnect to vote"), theme::regular(11.0), palette.dim);
+                theme::text(ui, crate::i18n::gettext(locale, "Reconnect to vote"), theme::regular(11.0), palette.dim);
             }
         });
     if enabled
