@@ -4228,15 +4228,16 @@ fn context_menu(ui: &mut egui::Ui, view: &View<'_>, message: &Message, actions: 
             }
             None => {
                 let downloading = matches!(media.state, MediaState::Downloading);
+                let download_label = if downloading {
+                    crate::i18n::gettext(view.locale, "Downloading…")
+                } else {
+                    crate::i18n::gettext(view.locale, "Download")
+                };
                 if widgets::menu_item_enabled(
                     ui,
                     &palette,
                     Some(Icon::Download),
-                    if downloading {
-                        crate::i18n::gettext(view.locale, "Downloading…")
-                    } else {
-                        crate::i18n::gettext(view.locale, "Download")
-                    },
+                    download_label.as_ref(),
                     !downloading,
                 ) {
                     if let Content::Document { file_name, .. } = &message.content {
